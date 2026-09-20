@@ -458,6 +458,21 @@ Some instructions.
 				'Rule "my_rule" is missing instructions text',
 			);
 		});
+
+		it("throws when an invalid H3 heading like ### Criterias is used", () => {
+			const md = `# Line Rules
+
+## empty_phrase
+Does the line contain a filler phrase?
+
+### Criterias
+- **true**: yes
+- **false**: no
+`;
+			expect(() => parseMarkdownRules(md)).toThrowErrorMatchingInlineSnapshot(
+				`[AssertionError: Invalid heading "### Criterias": only "### Criteria" is allowed under a rule]`,
+			);
+		});
 	});
 });
 

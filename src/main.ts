@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { realpathSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
@@ -25,8 +26,9 @@ export function resolveRulePath(r: string): string {
 }
 
 export function parseCliArgs(argv = process.argv.slice(2)): {
+	check: boolean;
 	rulesPaths: string[];
-	file: string;
+	file?: string;
 	provider?: ProviderName;
 	model?: string;
 	json: boolean;
@@ -36,6 +38,7 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 	const { values, positionals } = parseArgs({
 		args: argv,
 		options: {
+			check: { type: "boolean", short: "c", default: false },
 			rules: { type: "string", multiple: true, short: "r" },
 			provider: { type: "string", short: "p" },
 			model: { type: "string", short: "m" },
@@ -46,12 +49,14 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 		allowPositionals: true,
 	});
 
-	const rulesPaths = (values.rules ?? []).map(resolveRulePath);
+	const check = values.check ?? false;
+	const ruleInputs = [...(values.rules ?? []), ...(check ? positionals : [])];
+	const rulesPaths = ruleInputs.map(resolveRulePath);
 	const [file] = positionals;
 
-	if (!rulesPaths.length || !file) {
+	if (!rulesPaths.length || (!check && !file)) {
 		throw new Error(
-			"usage: node main.ts -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] <file>",
+			"usage: node main.ts [-c|--check] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [file]",
 		);
 	}
 
@@ -67,6 +72,7 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 	}
 
 	return {
+		check,
 		rulesPaths,
 		file,
 		provider,
@@ -79,6 +85,7 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 
 async function main() {
 	const {
+		check,
 		rulesPaths,
 		file,
 		provider: providerName,
@@ -87,6 +94,14 @@ async function main() {
 		stats,
 		debug,
 	} = parseCliArgs();
+
+	if (check) {
+		await loadRules(rulesPaths);
+		console.log("Rules valid.");
+		return;
+	}
+
+	assert(file, "file is required when not in check mode");
 	const provider = createProvider(providerName, model);
 
 	let apiCalls = 0;

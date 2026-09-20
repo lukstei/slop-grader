@@ -134,6 +134,7 @@ When a Markdown rule file deviates from the specification, `slop-grader` fails w
 | Incomplete noul criteria | `Rule "<id>" (...) criteria must define both "true" and "false" cases` | Provide both `- **true**:` and `- **false**:` items |
 | Insufficient score levels | `Rule "<id>" (...) criteria must contain at least 2 levels` | Provide at least 2 unordered bullet items |
 | Empty instructions | `Rule "<id>" is missing instructions text` | Add prompt text between `## <id>` and `### Criteria` (or before the next rule) |
+| Invalid H3 heading | `Invalid heading "### ...": only "### Criteria" is allowed under a rule` | Change heading to `### Criteria` |
 
 ---
 

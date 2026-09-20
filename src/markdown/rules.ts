@@ -123,10 +123,14 @@ export function parseMarkdownRules(
 			}
 
 			// Criteria headings must be H3
-			if (node.depth === 3 && headingText.toLowerCase() === "criteria") {
+			if (node.depth === 3) {
 				assert(
 					currentRule !== null,
-					`"### Criteria"${fileContext} must be inside a rule`,
+					`"### ${headingText}"${fileContext} must be inside a rule`,
+				);
+				assert(
+					headingText.trim().toLowerCase() === "criteria",
+					`Invalid heading "### ${headingText}"${fileContext}: only "### Criteria" is allowed under a rule`,
 				);
 				currentRule.bodyNodes.push(node);
 				continue;

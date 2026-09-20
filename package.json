@@ -15,6 +15,7 @@
 	"files": [
 		"dist",
 		"rules",
+		"skills",
 		"SKILL.md",
 		"README.md"
 	],

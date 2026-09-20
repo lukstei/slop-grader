@@ -123,21 +123,30 @@ Rate the narrative arc of the document.
 
 See [`docs/SYNTAX.md`](docs/SYNTAX.md) for the complete Markdown rule syntax specification and validation reference.
 
+Validate ruleset syntax offline without an API key:
+
+```sh
+npx @lukstei/slop-grader@latest --check -r ./my-rules.md
+```
+
+Use the [`create-slop-grader-rules`](skills/create-slop-grader-rules/SKILL.md) skill to create and validate custom rulesets with an AI assistant.
+
 Custom JSON rulesets (`-r ./my-rules.json`) are also supported.
 
 ## CLI Reference
 
 ```sh
-npx @lukstei/slop-grader@latest -r <ruleset> [-r <ruleset> ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] <file>
+npx @lukstei/slop-grader@latest [-c|--check] -r <ruleset> [-r <ruleset> ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [file]
 ```
 
 ### Flags
 
 | Flag | Short | Description |
 |---|---|---|
+| `--check` | `-c` | Validate ruleset syntax without grading or calling the API. |
 | `--rules <name\|path>` | `-r` | Ruleset to apply. Repeatable. Accepts built-in names, Markdown (`.md`) files, or JSON file paths. |
 | `--provider <jev\|openrouter>` | `-p` | Override the AI provider. |
-| `--model <model>` | `-m` | Override the default model (`jev-latest` for `jev`, `typesafe/jev-latest` for `openrouter`). |
+| `--model <model>` | `-m` | Override the default model (`jev-latest` for `jev`, `~typesafe/jev-latest` for `openrouter`). |
 | `--json` | `-j` | Emit structured JSON instead of the human-readable report. |
 | `--stats` | `-s` | Print execution statistics (rules applied, lines evaluated, questions asked, API calls). |
 | `--debug` | `-d` | Log all API calls (timing, request, response) as JSON to stderr. |
@@ -155,7 +164,7 @@ Provider resolution order:
 2. `TYPESAFE_PROVIDER` environment variable
 3. Auto-detected from keys (`TYPESAFE_API_KEY` selects `jev`; `OPENROUTER_API_KEY` selects `openrouter`)
 
-Grading runs on `jev-latest` (TypeSafe) or `typesafe/jev-latest` (OpenRouter) by default, overridable via `--model` (`-m`).
+Grading runs on `jev-latest` (TypeSafe) or `~typesafe/jev-latest` (OpenRouter) by default, overridable via `--model` (`-m`).
 
 ## Output Formats
 

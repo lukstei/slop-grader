@@ -24,6 +24,7 @@ describe("main CLI", () => {
 		const parsed = parseCliArgs(["-r", "no-ai-slop", "README.md"]);
 		expect(stripAbsolutePaths(parsed)).toMatchInlineSnapshot(`
 			{
+			  "check": false,
 			  "debug": false,
 			  "file": "README.md",
 			  "json": false,
@@ -50,6 +51,7 @@ describe("main CLI", () => {
 		]);
 		expect(stripAbsolutePaths(parsed)).toMatchInlineSnapshot(`
 			{
+			  "check": false,
 			  "debug": false,
 			  "file": "README.md",
 			  "json": true,
@@ -58,6 +60,43 @@ describe("main CLI", () => {
 			  "rulesPaths": [
 			    "rules/no-ai-slop.md",
 			    "rules/tech-docs.md",
+			  ],
+			  "stats": false,
+			}
+		`);
+	});
+
+	it("parseCliArgs parses --check flag and -c alias", () => {
+		const parsedLong = parseCliArgs(["--check", "-r", "no-ai-slop"]);
+		expect(stripAbsolutePaths(parsedLong)).toMatchInlineSnapshot(`
+			{
+			  "check": true,
+			  "debug": false,
+			  "file": undefined,
+			  "json": false,
+			  "model": undefined,
+			  "provider": undefined,
+			  "rulesPaths": [
+			    "rules/no-ai-slop.md",
+			  ],
+			  "stats": false,
+			}
+		`);
+
+		const parsedShort = parseCliArgs(["-c", "-r", "no-ai-slop"]);
+		expect(parsedShort.check).toBe(true);
+
+		const parsedPositional = parseCliArgs(["--check", "rules/no-ai-slop.md"]);
+		expect(stripAbsolutePaths(parsedPositional)).toMatchInlineSnapshot(`
+			{
+			  "check": true,
+			  "debug": false,
+			  "file": "rules/no-ai-slop.md",
+			  "json": false,
+			  "model": undefined,
+			  "provider": undefined,
+			  "rulesPaths": [
+			    "rules/no-ai-slop.md",
 			  ],
 			  "stats": false,
 			}
@@ -104,17 +143,20 @@ describe("main CLI", () => {
 
 	it("parseCliArgs throws usage on missing arguments", () => {
 		expect(() => parseCliArgs([])).toThrowErrorMatchingInlineSnapshot(
-			`[Error: usage: node main.ts -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] <file>]`,
+			`[Error: usage: node main.ts [-c|--check] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [file]]`,
 		);
 		expect(() =>
 			parseCliArgs(["README.md"]),
 		).toThrowErrorMatchingInlineSnapshot(
-			`[Error: usage: node main.ts -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] <file>]`,
+			`[Error: usage: node main.ts [-c|--check] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [file]]`,
 		);
 		expect(() =>
 			parseCliArgs(["-r", "no-ai-slop"]),
 		).toThrowErrorMatchingInlineSnapshot(
-			`[Error: usage: node main.ts -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] <file>]`,
+			`[Error: usage: node main.ts [-c|--check] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [file]]`,
+		);
+		expect(() => parseCliArgs(["--check"])).toThrowErrorMatchingInlineSnapshot(
+			`[Error: usage: node main.ts [-c|--check] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [file]]`,
 		);
 	});
 
