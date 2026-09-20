@@ -97,7 +97,9 @@ Pass built-in rulesets by name:
 
 ### Custom rulesets
 
-Define custom rules in Markdown (`-r ./my-rules.md`), organized under `# Line Rules` and `# Document Rules` sections:
+Define custom rules in Markdown (`-r ./my-rules.md`), organized under `# Line Rules` and `# Document Rules` sections.
+
+You can be creative and ask any plain-text question about a single line or the whole document. Rules work on any text format—prose, git diffs, server logs, legal contracts, or structured text like CSV files:
 
 ```markdown
 # Line Rules
@@ -120,6 +122,140 @@ Rate the narrative arc of the document.
 - Clear progression — each section sets up the next
 - Tight arc — the ending pays off the opening
 ```
+
+#### Inspirations for rulesets
+
+<details>
+<summary><strong>Structured text (CSV transaction audit)</strong></summary>
+
+```markdown
+# Line Rules
+
+## suspicious_refund
+Does this CSV transaction row show a refund exceeding $500 without a manager approval ID in column 6?
+
+### Criteria
+- **true**: The row records a refund over $500 and column 6 lacks an approval ID.
+- **false**: The amount is $500 or less, column 6 contains an approval ID, or the row is not a refund.
+```
+
+</details>
+
+<details>
+<summary><strong>Incident postmortems (systemic analysis)</strong></summary>
+
+```markdown
+# Document Rules
+
+## root_cause_depth
+Evaluate whether this postmortem addresses systemic engineering safeguards instead of individual human error.
+
+### Criteria
+- Blames operator error without addressing missing guardrails
+- Identifies immediate triggers but ignores underlying architecture
+- Identifies failure modes and plans concrete monitoring or test coverage
+- Proposes systemic automated defenses, blast-radius containment, and architectural fixes
+```
+
+</details>
+
+<details>
+<summary><strong>Legal agreements (contract risks)</strong></summary>
+
+```markdown
+# Line Rules
+
+## uncapped_indemnity
+Does this clause expose the company to uncapped indemnification for third-party claims?
+
+### Criteria
+- **true**: The clause creates an indemnification obligation without liability caps.
+- **false**: The obligation falls under the standard aggregate liability limit.
+```
+
+</details>
+
+<details>
+<summary><strong>Customer conversations (support transcripts)</strong></summary>
+
+```markdown
+# Line Rules
+
+## unauthorized_promise
+Does this agent response promise an unreleased feature date or custom contract concession?
+
+### Criteria
+- **true**: Agent commits to an unannounced date or non-standard term.
+- **false**: Agent refers customer to public docs or defers to account managers.
+```
+
+</details>
+
+<details>
+<summary><strong>Code review (unjustified type assertions)</strong></summary>
+
+```markdown
+# Line Rules
+
+## unjustified_type_cast
+Does this line use a type assertion (`as`), non-null assertion (`!`), or loose cast to silence a compiler error without proper narrowing or input validation?
+
+### Criteria
+- **true**: Casts away type safety without an upstream type guard, schema validation, or explanatory comment.
+- **false**: Type is narrowed safely, or the assertion bridges an external API boundary with runtime checks.
+```
+
+</details>
+
+<details>
+<summary><strong>Security audit (hardcoded credentials and secrets)</strong></summary>
+
+```markdown
+# Line Rules
+
+## hardcoded_secret
+Does this line contain a hardcoded API key, bearer token, private key, or password rather than referencing an environment variable or secret manager?
+
+### Criteria
+- **true**: Line contains a literal credential, private token, or hardcoded secret string.
+- **false**: Line references an environment variable, config placeholder, mock test fixture, or public key.
+```
+
+</details>
+
+<details>
+<summary><strong>Code quality (silent error swallowing)</strong></summary>
+
+```markdown
+# Line Rules
+
+## swallowed_error
+Does this catch block or fallback expression silence an unexpected error without diagnostic logging or recovery?
+
+### Criteria
+- **true**: Catches an exception and returns null or an empty default without logging context.
+- **false**: Logs the error with context, rethrows, or implements a documented recovery strategy.
+```
+
+</details>
+
+<details>
+<summary><strong>Git workflow (commit message intent)</strong></summary>
+
+```markdown
+# Document Rules
+
+## commit_intent
+Does this commit message or PR description explain the motivation and problem context rather than merely describing code changes?
+
+### Criteria
+- Mechanical change list only with no rationale
+- Mentions the fix with minimal explanation of the problem
+- Explains the failure trigger, bug condition, and rationale clearly
+- Details root cause, design tradeoffs considered, and verification evidence
+```
+
+</details>
 
 See [`docs/SYNTAX.md`](docs/SYNTAX.md) for the complete Markdown rule syntax specification and validation reference.
 
