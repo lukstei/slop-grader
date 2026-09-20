@@ -3,6 +3,7 @@
 [![CI](https://github.com/lukstei/slop-grader/actions/workflows/ci.yml/badge.svg)](https://github.com/lukstei/slop-grader/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![NPM Version](https://img.shields.io/npm/v/@lukstei/slop-grader.svg)](https://www.npmjs.com/package/@lukstei/slop-grader)
+[![npm provenance](https://img.shields.io/npm/provenance/@lukstei/slop-grader)](https://docs.npmjs.com/generating-provenance-statements)
 
 Jev-powered, rule-based slop grader for text files.
 
