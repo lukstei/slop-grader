@@ -208,33 +208,17 @@ npx @lukstei/slop-grader@latest -r no-ai-slop -r article-scores --json --stats m
 
 ## How Evaluation Works
 
-`slop-grader` splits rules into line-level rules (`"scope": "line"`) and document-level rules (`"scope": "document"`).
+Evaluation separates line-level checks (spotting specific patterns or phrases) from document-level checks (evaluating tone or overall structure).
 
-### Line batching and questions
+### Batching by rule instead of line
 
-1. **Parsing:** The document is split into non-empty lines, each assigned a 1-based marker like `L0001`.
-2. **Batching:** Lines are chunked into batches of up to 255 lines (`BATCH_SIZE`).
-3. **Question mapping:** For each line rule, `slop-grader` makes one API call per batch. The request state contains all lines in the batch formatted as `L0001| line text`. The request defines one question per line: `For the line L0001 answer: <rule instructions>`.
-4. **Execution:** All rule and batch requests run concurrently with `Promise.all`.
-5. **Thresholding:** Each line rule asks a `noul` question (confidence between 0 and 1). Lines scoring $\ge 0.8$ are flagged.
+Documents have hundreds of lines, but rulesets rarely have more than 5 to 10 rules.
 
-Document rules run in a single call over the full text, returning discrete score distributions (0 to 3).
+Sending one API request per line would mean hundreds of network calls, hitting rate limits and stalling execution. A 300-line document with 5 rules would take 300 requests.
 
-### Why not one request per line?
+Instead, `slop-grader` groups lines into batches of 255 and evaluates each rule across the entire batch in a single call. That same 300-line document runs in just 10 parallel requests.
 
-The obvious alternative is sending one API request per line (with surrounding context lines) and asking all rules for that line in that single request.
-
-That design fails on cardinality. Documents often have hundreds or thousands of lines ($L$), while rulesets rarely have more than 5 to 10 rules ($R$).
-
-If requests are organized per line:
-- Request count scales with $L$ ($O(L)$).
-- A 300-line document with 5 rules takes 300 API requests. Each request asks 5 questions.
-- 300 HTTP requests introduce latency, rate-limit pressure, and connection overhead.
-
-By inverting the axes and grouping by rule:
-- Lines become questions inside a batch. Jev accepts up to 255 questions in a single decision call.
-- Request count scales with rules: $R \times \lceil L / 255 \rceil$.
-- That same 300-line document with 5 rules takes only 10 API requests ($5 \times 2$), with each call evaluating 1 rule across up to 255 lines at once.
+Document rules run in a single request across the entire text.
 
 ## Development
 
