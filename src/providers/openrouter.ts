@@ -4,14 +4,17 @@ import type { Answers } from "@openrouter/sdk/models/decisionsresponse";
 import type { Provider } from "../provider.ts";
 
 const OPENROUTER_API_URL = "https://openrouter.ai/api/alpha/decisions";
+const DEFAULT_MODEL = "typesafe/jev-latest";
 
 export class OpenRouterProvider implements Provider {
 	readonly #apiKey: string;
+	readonly #model: string;
 
-	constructor() {
+	constructor(model?: string) {
 		const apiKey = process.env.OPENROUTER_API_KEY;
 		assert(apiKey, "Missing OPENROUTER_API_KEY environment variable.");
 		this.#apiKey = apiKey;
+		this.#model = model ?? DEFAULT_MODEL;
 	}
 
 	async createDecision(
@@ -23,7 +26,7 @@ export class OpenRouterProvider implements Provider {
 				"Content-Type": "application/json",
 				Authorization: `Bearer ${this.#apiKey}`,
 			},
-			body: JSON.stringify(req),
+			body: JSON.stringify({ ...req, model: this.#model }),
 		});
 
 		if (!res.ok) {

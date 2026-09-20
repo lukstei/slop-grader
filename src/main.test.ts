@@ -27,6 +27,7 @@ describe("main CLI", () => {
 			  "debug": false,
 			  "file": "README.md",
 			  "json": false,
+			  "model": undefined,
 			  "provider": undefined,
 			  "rulesPaths": [
 			    "rules/no-ai-slop.json",
@@ -52,6 +53,7 @@ describe("main CLI", () => {
 			  "debug": false,
 			  "file": "README.md",
 			  "json": true,
+			  "model": undefined,
 			  "provider": "openrouter",
 			  "rulesPaths": [
 			    "rules/no-ai-slop.json",
@@ -60,6 +62,26 @@ describe("main CLI", () => {
 			  "stats": false,
 			}
 		`);
+	});
+
+	it("parseCliArgs parses --model flag and -m alias", () => {
+		const parsedLong = parseCliArgs([
+			"-r",
+			"no-ai-slop",
+			"--model",
+			"jev-preview",
+			"README.md",
+		]);
+		expect(parsedLong.model).toBe("jev-preview");
+
+		const parsedShort = parseCliArgs([
+			"-r",
+			"no-ai-slop",
+			"-m",
+			"custom-model",
+			"README.md",
+		]);
+		expect(parsedShort.model).toBe("custom-model");
 	});
 
 	it("parseCliArgs parses --stats flag", () => {
@@ -82,17 +104,17 @@ describe("main CLI", () => {
 
 	it("parseCliArgs throws usage on missing arguments", () => {
 		expect(() => parseCliArgs([])).toThrowErrorMatchingInlineSnapshot(
-			`[Error: usage: node main.ts -r <name|path> [-r ...] [--provider <jev|openrouter>] [--json] [--stats] [--debug] <file>]`,
+			`[Error: usage: node main.ts -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] <file>]`,
 		);
 		expect(() =>
 			parseCliArgs(["README.md"]),
 		).toThrowErrorMatchingInlineSnapshot(
-			`[Error: usage: node main.ts -r <name|path> [-r ...] [--provider <jev|openrouter>] [--json] [--stats] [--debug] <file>]`,
+			`[Error: usage: node main.ts -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] <file>]`,
 		);
 		expect(() =>
 			parseCliArgs(["-r", "no-ai-slop"]),
 		).toThrowErrorMatchingInlineSnapshot(
-			`[Error: usage: node main.ts -r <name|path> [-r ...] [--provider <jev|openrouter>] [--json] [--stats] [--debug] <file>]`,
+			`[Error: usage: node main.ts -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] <file>]`,
 		);
 	});
 

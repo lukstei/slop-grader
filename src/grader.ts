@@ -7,7 +7,7 @@ import type { DecisionsScoreQuestion } from "@openrouter/sdk/models/decisionssco
 import type { Provider } from "./provider.ts";
 import type { FlagMap, Line, Rule } from "./types.ts";
 
-export const MODEL = "typesafe/jev-1.13";
+export const MODEL = "typesafe/jev-latest";
 export const THRESHOLD = 0.8;
 export const BATCH_SIZE = 255;
 

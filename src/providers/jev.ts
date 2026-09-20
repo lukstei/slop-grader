@@ -4,14 +4,23 @@ import type {
 	Questions as ORQuestion,
 } from "@openrouter/sdk/models/decisionsrequest";
 import type { Answers } from "@openrouter/sdk/models/decisionsresponse";
-import type { Questions as TSQuestions } from "@typesafe-ai/sdk";
+import type { DecisionsScoreAnswer } from "@openrouter/sdk/models/decisionsscoreanswer";
+import type { ScoreCriteria, Questions as TSQuestions } from "@typesafe-ai/sdk";
 import { choice, noul, score, TypeSafeClient } from "@typesafe-ai/sdk";
 import type { Provider } from "../provider.ts";
 
+const DEFAULT_MODEL = "jev-latest";
+
 export class JevProvider implements Provider {
 	readonly #client: TypeSafeClient;
+	readonly #model: string;
 
-	constructor() {
+	constructor(client?: TypeSafeClient, model?: string) {
+		this.#model = model ?? DEFAULT_MODEL;
+		if (client) {
+			this.#client = client;
+			return;
+		}
 		const apiKey = process.env.TYPESAFE_API_KEY;
 		assert(apiKey, "Missing TYPESAFE_API_KEY environment variable.");
 		this.#client = new TypeSafeClient({ apiKey });
@@ -26,7 +35,7 @@ export class JevProvider implements Provider {
 		}
 
 		const result = await this.#client.systemOne({
-			model: req.model,
+			model: this.#model,
 			state: req.state,
 			questions,
 		});
@@ -37,14 +46,22 @@ export class JevProvider implements Provider {
 				case "noul":
 					answers[id] = { type: "noul", noul: answer.noul };
 					break;
-				case "score":
+				case "score": {
+					const legend: DecisionsScoreAnswer["legend"] = {};
+					for (const [k, v] of Object.entries(answer.legend)) {
+						if (v !== null) {
+							legend[k] = v;
+						}
+					}
 					answers[id] = {
 						type: "score",
 						score: answer.score,
 						confidence: answer.confidence,
 						probabilities: answer.probabilities,
+						legend,
 					};
 					break;
+				}
 				case "choice":
 					answers[id] = {
 						type: "choice",
@@ -70,10 +87,16 @@ function toTSQuestion(q: ORQuestion): TSQuestions[string] {
 				Array.isArray(criteria) && criteria.length >= 2,
 				"score question needs ≥2 criteria",
 			);
-			return score(
-				q.instructions ?? undefined,
-				criteria as [string, string, ...string[]],
+			const [c0, c1, ...rest] = criteria;
+			assert(
+				c0 !== undefined && c1 !== undefined,
+				"score question needs ≥2 criteria",
 			);
+			return score(q.instructions ?? undefined, [
+				c0,
+				c1,
+				...rest,
+			] as ScoreCriteria);
 		}
 		case "choice": {
 			return choice(q.instructions ?? undefined, q.criteria);

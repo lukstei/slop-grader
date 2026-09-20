@@ -28,6 +28,7 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 	rulesPaths: string[];
 	file: string;
 	provider?: ProviderName;
+	model?: string;
 	json: boolean;
 	stats: boolean;
 	debug: boolean;
@@ -37,6 +38,7 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 		options: {
 			rules: { type: "string", multiple: true, short: "r" },
 			provider: { type: "string", short: "p" },
+			model: { type: "string", short: "m" },
 			json: { type: "boolean", short: "j", default: false },
 			stats: { type: "boolean", short: "s", default: false },
 			debug: { type: "boolean", short: "d", default: false },
@@ -49,7 +51,7 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 
 	if (!rulesPaths.length || !file) {
 		throw new Error(
-			"usage: node main.ts -r <name|path> [-r ...] [--provider <jev|openrouter>] [--json] [--stats] [--debug] <file>",
+			"usage: node main.ts -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] <file>",
 		);
 	}
 
@@ -68,6 +70,7 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 		rulesPaths,
 		file,
 		provider,
+		model: values.model,
 		json: values.json ?? false,
 		stats: values.stats ?? false,
 		debug: values.debug ?? false,
@@ -79,11 +82,12 @@ async function main() {
 		rulesPaths,
 		file,
 		provider: providerName,
+		model,
 		json,
 		stats,
 		debug,
 	} = parseCliArgs();
-	const provider = createProvider(providerName);
+	const provider = createProvider(providerName, model);
 
 	let apiCalls = 0;
 	const trackingProvider: Provider = {

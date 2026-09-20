@@ -13,13 +13,13 @@ export interface Provider {
 
 export type ProviderName = "openrouter" | "jev";
 
-export function createProvider(name?: ProviderName): Provider {
+export function createProvider(name?: ProviderName, model?: string): Provider {
 	const resolved = name ?? resolveFromEnv();
 	switch (resolved) {
 		case "openrouter":
-			return new OpenRouterProvider();
+			return new OpenRouterProvider(model);
 		case "jev":
-			return new JevProvider();
+			return new JevProvider(undefined, model);
 	}
 }
 
