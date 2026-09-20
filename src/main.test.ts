@@ -1,5 +1,13 @@
+import { relative } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parseCliArgs, resolveRulePath } from "./main.ts";
+
+function stripAbsolutePaths(parsed: ReturnType<typeof parseCliArgs>) {
+	return {
+		...parsed,
+		rulesPaths: parsed.rulesPaths.map((p) => relative(process.cwd(), p)),
+	};
+}
 
 describe("main CLI", () => {
 	it("resolveRulePath resolves bare names to built-in rules directory", () => {
@@ -14,13 +22,13 @@ describe("main CLI", () => {
 
 	it("parseCliArgs parses valid arguments with defaults", () => {
 		const parsed = parseCliArgs(["-r", "no-ai-slop", "README.md"]);
-		expect(parsed).toMatchInlineSnapshot(`
+		expect(stripAbsolutePaths(parsed)).toMatchInlineSnapshot(`
 			{
 			  "file": "README.md",
 			  "json": false,
 			  "provider": undefined,
 			  "rulesPaths": [
-			    "/Users/Lukas.Steinbrecher/dev/slop-grader/rules/no-ai-slop.json",
+			    "rules/no-ai-slop.json",
 			  ],
 			  "stats": false,
 			}
@@ -38,14 +46,14 @@ describe("main CLI", () => {
 			"--json",
 			"README.md",
 		]);
-		expect(parsed).toMatchInlineSnapshot(`
+		expect(stripAbsolutePaths(parsed)).toMatchInlineSnapshot(`
 			{
 			  "file": "README.md",
 			  "json": true,
 			  "provider": "openrouter",
 			  "rulesPaths": [
-			    "/Users/Lukas.Steinbrecher/dev/slop-grader/rules/no-ai-slop.json",
-			    "/Users/Lukas.Steinbrecher/dev/slop-grader/rules/tech-docs.json",
+			    "rules/no-ai-slop.json",
+			    "rules/tech-docs.json",
 			  ],
 			  "stats": false,
 			}
