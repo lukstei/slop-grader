@@ -3,7 +3,6 @@
 [![CI](https://github.com/lukstei/slop-grader/actions/workflows/ci.yml/badge.svg)](https://github.com/lukstei/slop-grader/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![NPM Version](https://img.shields.io/npm/v/@lukstei/slop-grader.svg)](https://www.npmjs.com/package/@lukstei/slop-grader)
-[![npm provenance](https://img.shields.io/npm/provenance/@lukstei/slop-grader)](https://docs.npmjs.com/generating-provenance-statements)
 
 Jev-powered, rule-based slop grader for text files.
 
@@ -13,7 +12,7 @@ Run it on a draft. Copy the output into an AI agent. The agent uses the bundled 
 
 ```sh
 export OPENROUTER_API_KEY=sk-or-...
-npx @lukstei/slop-grader -r <ruleset> [-r <ruleset> ...] <file>
+npx @lukstei/slop-grader -r <ruleset> [-r <ruleset> ...] [--json] <file>
 ```
 
 Example:
@@ -23,6 +22,14 @@ npx @lukstei/slop-grader -r no-ai-slop -r article-scores my-draft.txt
 ```
 
 Pass a ruleset by bare name (resolved from the built-in `rules/` directory) or by path to a custom JSON file.
+
+### Flags
+
+| Flag | Short | Description |
+|---|---|---|
+| `--rules <name\|path>` | `-r` | Ruleset to apply. Repeatable. |
+| `--provider <jev\|openrouter>` | `-p` | Override the AI provider. |
+| `--json` | `-j` | Emit structured JSON instead of the human-readable report. |
 
 ## Built-in rulesets
 
@@ -50,6 +57,31 @@ closing_strength 0.3/3   (confidence high)  "Trails off or summarizes"
 ```
 
 Only lines that cross the 0.8 confidence threshold appear. Clean lines are not printed.
+
+### JSON output
+
+Pass `--json` (or `-j`) to get machine-readable output instead:
+
+```sh
+npx @lukstei/slop-grader -r no-ai-slop -r article-scores --json my-draft.txt | jq .
+```
+
+```json
+{
+  "file": "/abs/path/to/my-draft.txt",
+  "rules": ["/abs/path/to/no-ai-slop.json"],
+  "violations": {
+    "lines": [
+      { "lineNum": 1, "text": "Our platform empowers teams...", "rules": ["banned_word"] }
+    ],
+    "document": {
+      "narrative_arc": { "score": 1.4, "max": 3, "confidence": 0.72, "label": "Loosely organized" }
+    }
+  }
+}
+```
+
+Always emitted — `violations.lines` and `violations.document` are empty when the file is clean. Useful for CI pipelines or editor integrations.
 
 Copy this output into any AI agent with `SKILL.md` in context. The skill tells the agent how to triage each flag, dismiss false positives, and write a fix for each genuine violation.
 
