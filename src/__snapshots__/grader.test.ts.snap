@@ -1,0 +1,135 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`grader > buildBatchRequest generates formatted state and question prompts 1`] = `
+{
+  "batchQuestions": {
+    "L0001": {
+      "instructions": "For the line L0001 answer: Does this contain slop?",
+      "type": "noul",
+    },
+    "L0002": {
+      "instructions": "For the line L0002 answer: Does this contain slop?",
+      "type": "noul",
+    },
+  },
+  "state": "L0001| Hello world
+L0002| Second line",
+}
+`;
+
+exports[`grader > chunk splits array into chunks of given size 1`] = `
+[
+  [
+    1,
+    2,
+    3,
+  ],
+  [
+    4,
+    5,
+    6,
+  ],
+  [
+    7,
+  ],
+]
+`;
+
+exports[`grader > extractDocumentScores extracts score answers 1`] = `
+{
+  "clarity": {
+    "confidence": 0.9,
+    "score": 2.5,
+    "type": "score",
+  },
+}
+`;
+
+exports[`grader > extractLineFlags filters answers exceeding threshold 1`] = `
+[
+  [
+    1,
+    [
+      "rule_a",
+      "rule_b",
+    ],
+  ],
+  [
+    3,
+    [
+      "rule_b",
+    ],
+  ],
+]
+`;
+
+exports[`grader > gradeLines and gradeDocument with mock provider 1`] = `
+[
+  [
+    1,
+    [
+      "banned_word",
+    ],
+  ],
+]
+`;
+
+exports[`grader > gradeLines and gradeDocument with mock provider 2`] = `
+{
+  "engagement": {
+    "confidence": 0.85,
+    "score": 2.8,
+    "type": "score",
+  },
+}
+`;
+
+exports[`grader > lineMarker formats line numbers with zero-padding 1`] = `
+[
+  "L0001",
+  "L0010",
+  "L0100",
+  "L1000",
+]
+`;
+
+exports[`grader > parseLines splits non-empty lines and preserves line numbers 1`] = `
+[
+  {
+    "lineNum": 1,
+    "text": "First line",
+  },
+  {
+    "lineNum": 3,
+    "text": "Second line with whitespace",
+  },
+  {
+    "lineNum": 5,
+    "text": "Third line",
+  },
+]
+`;
+
+exports[`grader > splitRules separates line and document scoped rules 1`] = `
+{
+  "docRules": {
+    "narrative_arc": {
+      "criteria": [
+        "Weak",
+        "Medium",
+        "Strong",
+      ],
+      "instructions": "Evaluate narrative arc",
+      "type": "score",
+    },
+  },
+  "lineRules": {
+    "banned_word": {
+      "instructions": "Check for banned words",
+      "type": "noul",
+    },
+  },
+}
+`;
+
+exports[`grader > splitRules throws when rule scope is invalid 1`] = `[AssertionError: Rule "bad_rule" is missing a valid "scope" field ("line" or "document")]`;

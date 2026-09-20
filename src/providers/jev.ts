@@ -29,29 +29,28 @@ export class JevProvider implements Provider {
 			questions,
 		});
 
-		// Map the TypeSafe answer shape back to the OpenRouter Answers discriminated union.
 		const answers: Record<string, Answers> = {};
 		for (const [id, answer] of Object.entries(result.answers)) {
-			const a = answer as unknown as Record<string, unknown>;
-			if ("noul" in a) {
-				answers[id] = { type: "noul", noul: a.noul as number };
-			} else if ("score" in a) {
-				answers[id] = {
-					type: "score",
-					score: a.score as number,
-					confidence: a.confidence as number | undefined,
-					probabilities: a.probabilities as Record<string, number> | undefined,
-				};
-			} else if ("choice" in a) {
-				answers[id] = {
-					type: "choice",
-					choice: a.choice as string,
-					confidence: a.confidence as number | undefined,
-					probabilities: a.probabilities as Record<string, number> | undefined,
-				};
-			} else {
-				// Preserve unknown answer types as-is for forward compatibility.
-				answers[id] = a as unknown as Answers;
+			switch (answer.type) {
+				case "noul":
+					answers[id] = { type: "noul", noul: answer.noul };
+					break;
+				case "score":
+					answers[id] = {
+						type: "score",
+						score: answer.score,
+						confidence: answer.confidence,
+						probabilities: answer.probabilities,
+					};
+					break;
+				case "choice":
+					answers[id] = {
+						type: "choice",
+						choice: answer.choice,
+						confidence: answer.confidence,
+						probabilities: answer.probabilities,
+					};
+					break;
 			}
 		}
 
@@ -62,7 +61,7 @@ export class JevProvider implements Provider {
 function toTSQuestion(q: ORQuestion): TSQuestions[string] {
 	switch (q.type) {
 		case "noul":
-			return noul(q.instructions, q.criteria as Parameters<typeof noul>[1]);
+			return noul(q.instructions ?? undefined, q.criteria ?? undefined);
 		case "score": {
 			const criteria = q.criteria;
 			assert(
@@ -70,13 +69,12 @@ function toTSQuestion(q: ORQuestion): TSQuestions[string] {
 				"score question needs ≥2 criteria",
 			);
 			return score(
-				q.instructions,
-				criteria as unknown as Parameters<typeof score>[1],
+				q.instructions ?? undefined,
+				criteria as [string, string, ...string[]],
 			);
 		}
 		case "choice": {
-			const crit = q.criteria as Record<string, unknown>;
-			return choice(q.instructions, crit as Parameters<typeof choice>[1]);
+			return choice(q.instructions ?? undefined, q.criteria);
 		}
 	}
 }

@@ -25,7 +25,8 @@
 		"build": "node esbuild.config.js",
 		"typecheck": "tsc --noEmit",
 		"check": "biome check --write",
-		"verify": "npm run typecheck && npm run check",
+		"test": "vitest run",
+		"verify": "npm run typecheck && npm run check && npm run test",
 		"release:patch": "node scripts/release.js patch",
 		"release:minor": "node scripts/release.js minor",
 		"release:major": "node scripts/release.js major"
@@ -38,6 +39,7 @@
 		"@biomejs/biome": "2.5.14",
 		"@types/node": "^26.6.2",
 		"esbuild": "^0.28.2",
-		"typescript": "^7.0.2"
+		"typescript": "^7.0.2",
+		"vitest": "^5.0.1"
 	}
 }
