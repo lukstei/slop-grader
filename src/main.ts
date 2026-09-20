@@ -3,11 +3,16 @@ import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { gradeDocument, gradeLines, loadLines, loadRules } from "./grader.ts";
-import { createProvider, type ProviderName } from "./provider.ts";
+import {
+	createProvider,
+	type Provider,
+	type ProviderName,
+} from "./provider.ts";
 import {
 	formatDocumentScores,
 	formatJson,
 	formatLineReport,
+	formatStats,
 } from "./report.ts";
 
 const RULES_DIR = new URL("../rules/", import.meta.url).pathname;
@@ -24,6 +29,7 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 	file: string;
 	provider?: ProviderName;
 	json: boolean;
+	stats: boolean;
 } {
 	const { values, positionals } = parseArgs({
 		args: argv,
@@ -31,6 +37,7 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 			rules: { type: "string", multiple: true, short: "r" },
 			provider: { type: "string", short: "p" },
 			json: { type: "boolean", short: "j", default: false },
+			stats: { type: "boolean", short: "s", default: false },
 		},
 		allowPositionals: true,
 	});
@@ -40,7 +47,7 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 
 	if (!rulesPaths.length || !file) {
 		throw new Error(
-			"usage: node main.ts -r <name|path> [-r ...] [--provider <jev|openrouter>] [--json] <file>",
+			"usage: node main.ts -r <name|path> [-r ...] [--provider <jev|openrouter>] [--json] [--stats] <file>",
 		);
 	}
 
@@ -55,12 +62,32 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 		);
 	}
 
-	return { rulesPaths, file, provider, json: values.json ?? false };
+	return {
+		rulesPaths,
+		file,
+		provider,
+		json: values.json ?? false,
+		stats: values.stats ?? false,
+	};
 }
 
 async function main() {
-	const { rulesPaths, file, provider: providerName, json } = parseCliArgs();
+	const {
+		rulesPaths,
+		file,
+		provider: providerName,
+		json,
+		stats,
+	} = parseCliArgs();
 	const provider = createProvider(providerName);
+
+	let apiCalls = 0;
+	const trackingProvider: Provider = {
+		createDecision(req) {
+			apiCalls++;
+			return provider.createDecision(req);
+		},
+	};
 
 	const skillPath = new URL("../SKILL.md", import.meta.url).pathname;
 	const filePath = new URL(file, `file://${process.cwd()}/`).pathname;
@@ -72,21 +99,47 @@ async function main() {
 	]);
 
 	const [flags, scores] = await Promise.all([
-		gradeLines(lines, lineRules, provider),
-		gradeDocument(fullText, docRules, provider),
+		gradeLines(lines, lineRules, trackingProvider),
+		gradeDocument(fullText, docRules, trackingProvider),
 	]);
+
+	const lineRulesCount = Object.keys(lineRules).length;
+	const docRulesCount = Object.keys(docRules).length;
+	const statsData = stats
+		? {
+				rules: lineRulesCount + docRulesCount,
+				lineRules: lineRulesCount,
+				docRules: docRulesCount,
+				lines: lines.length,
+				questions: lines.length * lineRulesCount + docRulesCount,
+				apiCalls,
+			}
+		: undefined;
 
 	const hasViolations = flags.size > 0 || Object.keys(scores).length > 0;
 
 	if (json) {
 		console.log(
-			formatJson(filePath, rulesPaths, lines, flags, scores, docRules),
+			formatJson(
+				filePath,
+				rulesPaths,
+				lines,
+				flags,
+				scores,
+				docRules,
+				statsData,
+			),
 		);
 		return;
 	}
 
 	if (!hasViolations) {
 		console.log("No rules violated.");
+		if (statsData) {
+			for (const line of formatStats(statsData)) {
+				console.log(line);
+			}
+		}
 		return;
 	}
 
@@ -105,6 +158,12 @@ async function main() {
 	const docScores = formatDocumentScores(scores, docRules);
 	for (const line of docScores) {
 		console.log(line);
+	}
+
+	if (statsData) {
+		for (const line of formatStats(statsData)) {
+			console.log(line);
+		}
 	}
 }
 

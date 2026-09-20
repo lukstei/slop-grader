@@ -2,7 +2,7 @@ import type { Questions } from "@openrouter/sdk/models/decisionsrequest";
 import type { DecisionsScoreAnswer } from "@openrouter/sdk/models/decisionsscoreanswer";
 import type { DecisionsScoreQuestion } from "@openrouter/sdk/models/decisionsscorequestion";
 import { lineMarker } from "./grader.ts";
-import type { FlagMap, Line } from "./types.ts";
+import type { FlagMap, Line, Stats } from "./types.ts";
 
 export const CONF_HIGH = 0.8;
 export const CONF_MID = 0.5;
@@ -82,6 +82,21 @@ export function formatDocumentScores(
 	return out;
 }
 
+export function formatStats(stats: Stats): string[] {
+	const separator = "─".repeat(52);
+	const breakdown =
+		stats.docRules > 0 && stats.lineRules > 0
+			? ` (${stats.lineRules} line, ${stats.docRules} document)`
+			: "";
+	return [
+		`\n── Stats ${separator}\n`,
+		`Rules applied:    ${stats.rules}${breakdown}`,
+		`Lines evaluated:  ${stats.lines}`,
+		`Questions asked:  ${stats.questions}`,
+		`API calls:        ${stats.apiCalls}`,
+	];
+}
+
 export function formatJson(
 	filePath: string,
 	rulesPaths: string[],
@@ -89,6 +104,7 @@ export function formatJson(
 	flags: FlagMap,
 	scores: Record<string, DecisionsScoreAnswer>,
 	docQuestions: Record<string, DecisionsScoreQuestion>,
+	stats?: Stats,
 ): string {
 	const flaggedLines = lines
 		.filter(({ lineNum }) => flags.has(lineNum))
@@ -129,6 +145,7 @@ export function formatJson(
 			file: filePath,
 			rules: rulesPaths,
 			violations: { lines: flaggedLines, document },
+			...(stats ? { stats } : {}),
 		},
 		null,
 		2,

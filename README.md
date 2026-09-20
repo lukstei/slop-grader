@@ -18,7 +18,7 @@ export TYPESAFE_API_KEY=...
 # Option 2: Via OpenRouter
 export OPENROUTER_API_KEY=sk-or-...
 
-npx @lukstei/slop-grader@latest -r <ruleset> [-r <ruleset> ...] [--json] <file>
+npx @lukstei/slop-grader@latest -r <ruleset> [-r <ruleset> ...] [--json] [--stats] <file>
 ```
 
 Example:
@@ -36,6 +36,7 @@ Pass a ruleset by bare name (resolved from the built-in `rules/` directory) or b
 | `--rules <name\|path>` | `-r` | Ruleset to apply. Repeatable. |
 | `--provider <jev\|openrouter>` | `-p` | Override the AI provider. |
 | `--json` | `-j` | Emit structured JSON instead of the human-readable report. |
+| `--stats` | `-s` | Print execution statistics (rules applied, lines evaluated, questions asked, API calls). |
 
 ### Environment variables
 
@@ -79,12 +80,23 @@ closing_strength 0.3/3   (confidence high)  "Trails off or summarizes"
 
 Only lines that cross the 0.8 confidence threshold appear. Clean lines are not printed.
 
+Pass `--stats` (or `-s`) to append execution metrics:
+
+```
+── Stats ────────────────────────────────────────────────────────────
+
+Rules applied:    6 (5 line, 1 document)
+Lines evaluated:  12
+Questions asked:  61
+API calls:        6
+```
+
 ### JSON output
 
 Pass `--json` (or `-j`) to get machine-readable output instead:
 
 ```sh
-npx @lukstei/slop-grader@latest -r no-ai-slop -r article-scores --json my-draft.txt | jq .
+npx @lukstei/slop-grader@latest -r no-ai-slop -r article-scores --json --stats my-draft.txt | jq .
 ```
 
 ```json
@@ -98,6 +110,14 @@ npx @lukstei/slop-grader@latest -r no-ai-slop -r article-scores --json my-draft.
     "document": {
       "narrative_arc": { "score": 1.4, "max": 3, "confidence": 0.72, "label": "Loosely organized" }
     }
+  },
+  "stats": {
+    "rules": 6,
+    "lineRules": 5,
+    "docRules": 1,
+    "lines": 12,
+    "questions": 61,
+    "apiCalls": 6
   }
 }
 ```

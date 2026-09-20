@@ -4,6 +4,7 @@ import {
 	formatDocumentScores,
 	formatJson,
 	formatLineReport,
+	formatStats,
 } from "./report.ts";
 import type { FlagMap, Line } from "./types.ts";
 
@@ -100,5 +101,94 @@ describe("report", () => {
 			docQuestions,
 		);
 		expect(JSON.parse(jsonStr)).toMatchSnapshot();
+	});
+
+	it("formatStats formats execution stats with breakdown", () => {
+		const stats = {
+			rules: 6,
+			lineRules: 5,
+			docRules: 1,
+			lines: 12,
+			questions: 61,
+			apiCalls: 6,
+		};
+		expect(formatStats(stats)).toMatchInlineSnapshot(`
+			[
+			  "
+			── Stats ────────────────────────────────────────────────────
+			",
+			  "Rules applied:    6 (5 line, 1 document)",
+			  "Lines evaluated:  12",
+			  "Questions asked:  61",
+			  "API calls:        6",
+			]
+		`);
+	});
+
+	it("formatStats formats execution stats without breakdown when single scope", () => {
+		const stats = {
+			rules: 5,
+			lineRules: 5,
+			docRules: 0,
+			lines: 10,
+			questions: 50,
+			apiCalls: 5,
+		};
+		expect(formatStats(stats)).toMatchInlineSnapshot(`
+			[
+			  "
+			── Stats ────────────────────────────────────────────────────
+			",
+			  "Rules applied:    5",
+			  "Lines evaluated:  10",
+			  "Questions asked:  50",
+			  "API calls:        5",
+			]
+		`);
+	});
+
+	it("formatJson includes stats when provided", () => {
+		const lines: Line[] = [{ lineNum: 1, text: "Sample text" }];
+		const flags: FlagMap = new Map();
+		const scores = {};
+		const docQuestions = {};
+		const stats = {
+			rules: 1,
+			lineRules: 1,
+			docRules: 0,
+			lines: 1,
+			questions: 1,
+			apiCalls: 1,
+		};
+
+		const jsonStr = formatJson(
+			"/path/to/file.txt",
+			["/path/to/rules.json"],
+			lines,
+			flags,
+			scores,
+			docQuestions,
+			stats,
+		);
+		expect(JSON.parse(jsonStr)).toMatchInlineSnapshot(`
+			{
+			  "file": "/path/to/file.txt",
+			  "rules": [
+			    "/path/to/rules.json",
+			  ],
+			  "stats": {
+			    "apiCalls": 1,
+			    "docRules": 0,
+			    "lineRules": 1,
+			    "lines": 1,
+			    "questions": 1,
+			    "rules": 1,
+			  },
+			  "violations": {
+			    "document": {},
+			    "lines": [],
+			  },
+			}
+		`);
 	});
 });

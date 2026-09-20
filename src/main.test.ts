@@ -31,6 +31,11 @@ describe("main CLI", () => {
 		expect(parsed).toMatchSnapshot();
 	});
 
+	it("parseCliArgs parses --stats flag", () => {
+		const parsed = parseCliArgs(["-r", "no-ai-slop", "--stats", "README.md"]);
+		expect(parsed.stats).toBe(true);
+	});
+
 	it("parseCliArgs throws usage on missing arguments", () => {
 		expect(() => parseCliArgs([])).toThrowErrorMatchingSnapshot();
 		expect(() => parseCliArgs(["README.md"])).toThrowErrorMatchingSnapshot();
