@@ -38,12 +38,14 @@ function parseCliArgs(): {
 	rulesPaths: string[];
 	file: string;
 	provider?: ProviderName;
+	json: boolean;
 } {
 	const { values, positionals } = parseArgs({
 		args: process.argv.slice(2),
 		options: {
 			rules: { type: "string", multiple: true, short: "r" },
 			provider: { type: "string", short: "p" },
+			json: { type: "boolean", short: "j", default: false },
 		},
 		allowPositionals: true,
 	});
@@ -53,7 +55,7 @@ function parseCliArgs(): {
 
 	if (!rulesPaths.length || !file)
 		throw new Error(
-			"usage: node main.ts -r <name|path> [-r ...] [--provider <jev|openrouter>] <file>",
+			"usage: node main.ts -r <name|path> [-r ...] [--provider <jev|openrouter>] [--json] <file>",
 		);
 
 	const provider = values.provider as ProviderName | undefined;
@@ -62,7 +64,7 @@ function parseCliArgs(): {
 			`Unknown provider "${provider}". Valid values: jev, openrouter`,
 		);
 
-	return { rulesPaths, file, provider };
+	return { rulesPaths, file, provider, json: values.json ?? false };
 }
 
 function splitRules(
@@ -257,20 +259,64 @@ function printDocumentScores(
 	}
 }
 
+function formatJson(
+	filePath: string,
+	rulesPaths: string[],
+	lines: Line[],
+	flags: FlagMap,
+	scores: Record<string, DecisionsScoreAnswer>,
+	docQuestions: Record<string, DecisionsScoreQuestion>,
+): string {
+	const flaggedLines = lines
+		.filter(({ lineNum }) => flags.has(lineNum))
+		.map(({ lineNum, text }) => ({
+			lineNum,
+			text,
+			rules: flags.get(lineNum) ?? [],
+		}));
+
+	const document: Record<
+		string,
+		{ score: number; max: number; confidence: number; label: string }
+	> = {};
+	for (const [key, answer] of Object.entries(scores)) {
+		const q = docQuestions[key];
+		const criteria = q?.criteria as string[] | undefined;
+		if (!criteria) continue;
+		const max = criteria.length - 1;
+		const { score, confidence = 0 } = answer;
+		const tier = confidenceTier(confidence);
+		const frac = score % 1;
+		const isBetween = frac > 0.2 && frac < 0.8;
+		const showBoth = isBetween && tier !== "high";
+		let label: string;
+		if (showBoth) {
+			const lo = criteria[Math.floor(score)] ?? "";
+			const hi = criteria[Math.ceil(score)] ?? "";
+			const trim = (s: string) => s.split(" — ")[0] ?? s;
+			label = `${trim(lo)} ↔ ${trim(hi)}`;
+		} else {
+			label = criteria[Math.round(score)] ?? "";
+		}
+		document[key] = { score, max, confidence, label };
+	}
+
+	return JSON.stringify(
+		{ file: filePath, rules: rulesPaths, violations: { lines: flaggedLines, document } },
+		null,
+		2,
+	);
+}
+
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
-	const { rulesPaths, file, provider: providerName } = parseCliArgs();
+	const { rulesPaths, file, provider: providerName, json } = parseCliArgs();
 	const provider = createProvider(providerName);
 
 	const skillPath = new URL("../SKILL.md", `file://${import.meta.dirname}/`)
 		.pathname;
 	const filePath = new URL(file, `file://${process.cwd()}/`).pathname;
-	console.log(`Use the SKILL \`${skillPath}\` to improve \`${filePath}\`.\n`);
-
-	console.log("Rules:");
-	for (const p of rulesPaths) console.log(`  ${p}`);
-	console.log();
 
 	const [{ lineRules, docRules }, lines, fullText] = await Promise.all([
 		loadRules(rulesPaths),
@@ -282,6 +328,24 @@ async function main() {
 		gradeLines(lines, lineRules, provider),
 		gradeDocument(fullText, docRules, provider),
 	]);
+
+	const hasViolations = flags.size > 0 || Object.keys(scores).length > 0;
+
+	if (json) {
+		console.log(formatJson(filePath, rulesPaths, lines, flags, scores, docRules));
+		return;
+	}
+
+	if (!hasViolations) {
+		console.log("No rules violated.");
+		return;
+	}
+
+	console.log(`Use the SKILL \`${skillPath}\` to improve \`${filePath}\`.\n`);
+
+	console.log("Rules:");
+	for (const p of rulesPaths) console.log(`  ${p}`);
+	console.log();
 
 	printLineReport(lines, flags, lineRules);
 	printDocumentScores(scores, docRules);
