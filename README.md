@@ -1,5 +1,9 @@
 # slop-grader
 
+[![CI](https://github.com/lukstei/slop-grader/actions/workflows/ci.yml/badge.svg)](https://github.com/lukstei/slop-grader/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![NPM Version](https://img.shields.io/npm/v/@lukstei/slop-grader.svg)](https://www.npmjs.com/package/@lukstei/slop-grader)
+
 Jev-powered, rule-based slop grader for text files.
 
 Run it on a draft. Copy the output into an AI agent. The agent uses the bundled `SKILL.md` to triage false positives and produce a minimal fix plan.
