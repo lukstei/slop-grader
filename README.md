@@ -204,9 +204,9 @@ Evaluation separates line-level checks (spotting specific patterns or phrases) f
 
 ### Batching by rule instead of line
 
-Documents have hundreds of lines, but rulesets rarely have more than 5 to 10 rules.
+Documents have hundreds of lines, but the amount of rules is fixed.
 
-Sending one API request per line would mean hundreds of network calls, hitting rate limits and stalling execution. A 300-line document with 5 rules would take 300 requests.
+Sending one API request per line would mean hundreds of calls to the AI. A 300-line document with 5 rules would take 300 requests.
 
 Instead, `slop-grader` groups lines into batches of 255 and evaluates each rule across the entire batch in a single call. That same 300-line document runs in just 10 parallel requests.
 
@@ -215,9 +215,9 @@ Document rules run in a single request across the entire text.
 ## Development
 
 ```sh
-npm test         # Run vitest snapshot tests
+npm test         # Run tests
 npm run verify   # Run typecheck, biome lint, and tests
-npm run build    # Build with esbuild to dist/slop-grader.mjs
+npm run build    # Build
 ```
 
 ## Contributing
