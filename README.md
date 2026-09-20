@@ -7,14 +7,63 @@
 
 Rule-based slop grader for text files, powered by [Jev](https://typesafe.ai).
 
-## Workflow
+## How it works
 
-`slop-grader` runs as a two-step loop with an AI agent:
+`slop-grader` runs as a two-step loop: grade text with the CLI, then paste the output to your AI agent to plan the improvements.
 
-1. **Grade:** Run `slop-grader` against your document with your chosen rulesets to flag violations and score document quality.
-2. **Fix:** Pass the output to an AI agent with [`SKILL.md`](SKILL.md) in context. The skill guides the agent to triage flagged lines, dismiss false positives, and apply minimal fixes.
+### 1. Grade the document
 
-See an [example plan](examples/plan.md) and the resulting [improved document](examples/slop-improved.md).
+Run `slop-grader` on a document like [`examples/slop.md`](examples/slop.md):
+
+```sh
+npx @lukstei/slop-grader@latest -r no-ai-slop -r grammar-english -r tech-docs examples/slop.md
+```
+
+Output:
+
+```
+Use the SKILL `/path/to/slop-grader/SKILL.md` to improve `/path/to/slop-grader/examples/slop.md`.
+
+Rules:
+  /path/to/slop-grader/rules/no-ai-slop.json
+  /path/to/slop-grader/rules/grammar-english.json
+  /path/to/slop-grader/rules/tech-docs.json
+
+A=banned_word, B=empty_adverb, D=binary_contrast, F=faux_insight, G=colon_reveal, ...
+
+A               | L0001: # 🚀 The Ultimate Paradigm Shift in Modern Data Architecture
+A               | L0003: In this article, we will delve into the rich tapestry of modern distributed systems and explore how they seamlessly empower developers to unlock their true potential.
+D,F,G,Q         | L0007: What most people get wrong about databases is simple: it's not about speed, it's about trust.
+G               | L0009: The secret: it's all about asynchronous event-driven pipelines.
+N               | L0011: Studies show that 90% of architectures fail because of poor alignment.
+...
+
+## Document Scores
+
+structure_navigability  0.6/3   (confidence mid )  "Wall of text" ↔ "Has headings but they are vague or inconsistent"
+task_orientation        0.6/3   (confidence mid )  "Architecture dump" ↔ "Mixed"
+completeness            0.0/3   (confidence high)  "Fragment — critical steps, configuration, or context are missing"
+code_example_quality    0.1/3   (confidence high)  "No examples, or examples are pseudocode fragments that cannot run"
+prerequisite_clarity    0.6/3   (confidence mid )  "No prerequisites stated" ↔ "Partially stated"
+```
+
+### 2. Fix with an AI agent
+
+Pass the output to your AI agent:
+
+- The agent distinguishes real violations from false positives and generates concrete replacements (example plan with Gemini 3.8 Flash: [full plan](examples/plan.md)):
+  ```markdown
+  ### Line 1 — `banned_word`
+  - **Original:** `# 🚀 The Ultimate Paradigm Shift in Modern Data Architecture`
+  - **Fix:** `# Modern Data Architecture`
+  - **Reason:** Removes the banned phrase "paradigm shift" and decorative emoji.
+
+  ### Line 7 — `binary_contrast` + `faux_insight` + `colon_reveal` + `fake_profound_kicker`
+  - **Original:** `What most people get wrong about databases is simple: it's not about speed, it's about trust.`
+  - **Fix:** `Database design balances speed and trust.`
+  - **Reason:** Removes rhetorical framing and fake insight.
+  ```
+- After your review the plan is applied to produce an [improved document](examples/slop-improved.md).
 
 ## Quick Start
 
@@ -31,37 +80,6 @@ See an [example plan](examples/plan.md) and the resulting [improved document](ex
 export TYPESAFE_API_KEY=...
 npx @lukstei/slop-grader@latest -r no-ai-slop -r article-scores my-draft.md
 ```
-
-## CLI Reference
-
-```sh
-npx @lukstei/slop-grader@latest -r <ruleset> [-r <ruleset> ...] [--json] [--stats] [--debug] <file>
-```
-
-### Flags
-
-| Flag | Short | Description |
-|---|---|---|
-| `--rules <name\|path>` | `-r` | Ruleset to apply. Repeatable. Accepts built-in names or JSON file paths. |
-| `--provider <jev\|openrouter>` | `-p` | Override the AI provider. |
-| `--json` | `-j` | Emit structured JSON instead of the human-readable report. |
-| `--stats` | `-s` | Print execution statistics (rules applied, lines evaluated, questions asked, API calls). |
-| `--debug` | `-d` | Log all API calls (timing, request, response) as JSON to stderr. |
-
-### Providers and environment variables
-
-| Variable | Description |
-|---|---|
-| `TYPESAFE_API_KEY` | API key for direct Jev access via TypeSafe AI. Automatically selects `jev`. |
-| `OPENROUTER_API_KEY` | API key for OpenRouter. Automatically selects `openrouter`. |
-| `TYPESAFE_PROVIDER` | Explicitly choose `jev` or `openrouter` without passing `--provider`. |
-
-Provider resolution order:
-1. `--provider` (`-p`) flag
-2. `TYPESAFE_PROVIDER` environment variable
-3. Auto-detected from keys (`TYPESAFE_API_KEY` selects `jev`; `OPENROUTER_API_KEY` selects `openrouter`)
-
-Grading runs on `typesafe/jev-1.13` across both providers.
 
 ## Rulesets
 
@@ -115,46 +133,42 @@ Pass a custom ruleset by path to a JSON file (`-r ./my-rules.json`). Each key is
 }
 ```
 
+## CLI Reference
+
+```sh
+npx @lukstei/slop-grader@latest -r <ruleset> [-r <ruleset> ...] [--json] [--stats] [--debug] <file>
+```
+
+### Flags
+
+| Flag | Short | Description |
+|---|---|---|
+| `--rules <name\|path>` | `-r` | Ruleset to apply. Repeatable. Accepts built-in names or JSON file paths. |
+| `--provider <jev\|openrouter>` | `-p` | Override the AI provider. |
+| `--json` | `-j` | Emit structured JSON instead of the human-readable report. |
+| `--stats` | `-s` | Print execution statistics (rules applied, lines evaluated, questions asked, API calls). |
+| `--debug` | `-d` | Log all API calls (timing, request, response) as JSON to stderr. |
+
+### Providers and environment variables
+
+| Variable | Description |
+|---|---|
+| `TYPESAFE_API_KEY` | API key for direct Jev access via TypeSafe AI. Automatically selects `jev`. |
+| `OPENROUTER_API_KEY` | API key for OpenRouter. Automatically selects `openrouter`. |
+| `TYPESAFE_PROVIDER` | Explicitly choose `jev` or `openrouter` without passing `--provider`. |
+
+Provider resolution order:
+1. `--provider` (`-p`) flag
+2. `TYPESAFE_PROVIDER` environment variable
+3. Auto-detected from keys (`TYPESAFE_API_KEY` selects `jev`; `OPENROUTER_API_KEY` selects `openrouter`)
+
+Grading runs on `typesafe/jev-1.13` across both providers.
+
 ## Output Formats
 
 ### Human-readable report
 
-By default, `slop-grader` prints a human-readable report. Clean lines are omitted; only lines crossing the 0.8 confidence threshold appear.
-
-```
-$ npx @lukstei/slop-grader@latest -r no-ai-slop -r grammar-english -r tech-docs --stats examples/slop.md
-
-Use the SKILL `/path/to/slop-grader/SKILL.md` to improve `/path/to/slop-grader/examples/slop.md`.
-
-Rules:
-  /path/to/slop-grader/rules/no-ai-slop.json
-  /path/to/slop-grader/rules/grammar-english.json
-  /path/to/slop-grader/rules/tech-docs.json
-
-A=banned_word, B=empty_adverb, D=binary_contrast, F=faux_insight, G=colon_reveal, ...
-
-A               | L0001: # 🚀 The Ultimate Paradigm Shift in Modern Data Architecture
-A               | L0003: In this article, we will delve into the rich tapestry of modern distributed systems...
-D,F,G,Q         | L0007: What most people get wrong about databases is simple: it's not about speed, it's about trust.
-G               | L0009: The secret: it's all about asynchronous event-driven pipelines.
-N               | L0011: Studies show that 90% of architectures fail because of poor alignment.
-...
-
-## Document Scores
-
-structure_navigability  0.6/3   (confidence mid )  "Wall of text" ↔ "Has headings but they are vague or inconsistent"
-task_orientation        0.6/3   (confidence mid )  "Architecture dump" ↔ "Mixed"
-completeness            0.0/3   (confidence high)  "Fragment — critical steps, configuration, or context are missing"
-code_example_quality    0.1/3   (confidence high)  "No examples, or examples are pseudocode fragments that cannot run"
-prerequisite_clarity    0.6/3   (confidence mid )  "No prerequisites stated" ↔ "Partially stated"
-
-## Stats
-
-Rules applied:    40 (35 line, 5 document)
-Lines evaluated:  16
-Questions asked:  565
-API calls:        36
-```
+By default, `slop-grader` prints a human-readable report. Clean lines are omitted; only lines crossing the 0.8 confidence threshold appear. Pass `--stats` (or `-s`) to append execution metrics (rules applied, lines evaluated, API calls).
 
 If line rules run but find no violations, `No line rule violations found.` is displayed.
 
