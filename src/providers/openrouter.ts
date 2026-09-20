@@ -1,20 +1,33 @@
-import { OpenRouter } from "@openrouter/sdk";
 import type { DecisionsRequest } from "@openrouter/sdk/models/decisionsrequest";
 import type { Answers } from "@openrouter/sdk/models/decisionsresponse";
 import type { Provider } from "../provider.ts";
 
+const OPENROUTER_API_URL = "https://openrouter.ai/api/alpha/decisions";
+
 export class OpenRouterProvider implements Provider {
-	readonly #client: OpenRouter;
+	readonly #apiKey: string;
 
 	constructor() {
-		this.#client = new OpenRouter({
-			apiKey: process.env.OPENROUTER_API_KEY ?? "",
-		});
+		this.#apiKey = process.env.OPENROUTER_API_KEY ?? "";
 	}
 
 	async createDecision(
 		req: DecisionsRequest,
 	): Promise<{ answers: Record<string, Answers> }> {
-		return this.#client.alpha.decisions.create({ decisionsRequest: req });
+		const res = await fetch(OPENROUTER_API_URL, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${this.#apiKey}`,
+			},
+			body: JSON.stringify(req),
+		});
+
+		if (!res.ok) {
+			const text = await res.text().catch(() => "");
+			throw new Error(`OpenRouter API error (${res.status}): ${text}`);
+		}
+
+		return (await res.json()) as { answers: Record<string, Answers> };
 	}
 }
