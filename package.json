@@ -1,0 +1,43 @@
+{
+	"name": "@lukstei/slop-grader",
+	"version": "0.1.0",
+	"description": "Jev-powered, rule-based slop grader for text files",
+	"license": "MIT",
+	"author": "Lukas Steinbrecher",
+	"type": "module",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/lukstei/slop-grader.git"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"files": [
+		"dist",
+		"rules",
+		"SKILL.md",
+		"README.md"
+	],
+	"bin": {
+		"slop-grader": "dist/slop-grader.mjs"
+	},
+	"scripts": {
+		"build": "node esbuild.config.js",
+		"typecheck": "tsc --noEmit",
+		"check": "biome check --write",
+		"verify": "npm run typecheck && npm run check",
+		"release:patch": "node scripts/release.js patch",
+		"release:minor": "node scripts/release.js minor",
+		"release:major": "node scripts/release.js major"
+	},
+	"dependencies": {
+		"@openrouter/sdk": "^1.3.6",
+		"@typesafe-ai/sdk": "*"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.5.14",
+		"@types/node": "^26.6.2",
+		"esbuild": "^0.28.2",
+		"typescript": "^7.0.2"
+	}
+}

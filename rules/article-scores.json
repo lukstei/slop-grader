@@ -1,0 +1,90 @@
+{
+	"engagement": {
+		"scope": "document",
+		"type": "score",
+		"instructions": "How well does the article hold the reader's attention throughout?",
+		"criteria": [
+			"Reads like filler — no tension, stakes, or reason to keep reading past the first paragraph",
+			"Informative but flat — delivers facts without making the reader care about the outcome",
+			"Holds attention — creates genuine curiosity or stakes that pull the reader through sections",
+			"Compelling — the reader would forward this to a colleague or finish it on a busy day"
+		]
+	},
+	"narrative_arc": {
+		"scope": "document",
+		"type": "score",
+		"instructions": "Does the article have a clear, purposeful structure where each section builds on the last?",
+		"criteria": [
+			"Random pile of facts — sections could be reordered without the reader noticing",
+			"Loosely organized — sections relate to the topic but don't build on each other",
+			"Clear progression — each section sets up the next; the reader knows where the argument is going",
+			"Satisfying arc — opens a question or tension, builds through evidence, and resolves with a concrete payoff"
+		]
+	},
+	"information_density": {
+		"scope": "document",
+		"type": "score",
+		"instructions": "How well does the article back its claims with concrete facts, numbers, mechanisms, or examples?",
+		"criteria": [
+			"Mostly filler — few concrete facts, numbers, mechanisms, or examples",
+			"Thin — makes claims but rarely supports them with specifics",
+			"Solid — most claims are backed by a concrete fact, number, or example",
+			"Dense and useful — nearly every paragraph teaches something specific that the reader couldn't easily guess"
+		]
+	},
+	"originality": {
+		"scope": "document",
+		"type": "score",
+		"instructions": "Does the article say something the reader hasn't already read in the top search results on this topic?",
+		"criteria": [
+			"Commodity content — restates what any search result already says, with no new angle",
+			"Standard take — covers the topic competently but adds no original insight, data, or framing",
+			"Has a point of view — brings a distinct angle, original observation, or proprietary data",
+			"Genuinely new — the reader learns something they haven't encountered before, backed by evidence"
+		]
+	},
+	"voice_authenticity": {
+		"scope": "document",
+		"type": "score",
+		"instructions": "Does the article sound like a specific human with opinions wrote it, or like generic AI output?",
+		"criteria": [
+			"Generic AI output — could have been written by any LLM with no personal input",
+			"Polished but impersonal — competent prose without any identifiable author personality",
+			"Has a voice — recognizable opinions, cadence, or personality that a different author wouldn't produce",
+			"Distinctive — the reader could guess who wrote it from the style, opinions, and lived experience"
+		]
+	},
+	"headline_delivery": {
+		"scope": "document",
+		"type": "score",
+		"instructions": "Does the article deliver on the promise of its title or headline?",
+		"criteria": [
+			"Bait-and-switch — the title promises something the article never addresses",
+			"Partially delivered — touches on the title's topic but leaves the main question unanswered",
+			"Delivered — the reader gets what the title promised, though nothing extra",
+			"Overdelivered — answers the title's promise and gives the reader more than they expected"
+		]
+	},
+	"opening_strength": {
+		"scope": "document",
+		"type": "score",
+		"instructions": "Does the opening earn the reader's next 30 seconds?",
+		"criteria": [
+			"Generic opener — could apply to any article on any topic (\"In today's world…\")",
+			"Topical but slow — names the subject but doesn't create a reason to keep reading",
+			"Direct and grounded — opens with a concrete fact, claim, or observation that sets up the article",
+			"Hooks immediately — the first 2–3 sentences create tension, surprise, or a question the reader needs answered"
+		]
+	},
+	"closing_strength": {
+		"scope": "document",
+		"type": "score",
+		"instructions": "Does the ending leave the reader with something concrete to remember or act on?",
+		"criteria": [
+			"Trails off or summarizes — restates the article or ends with vague platitudes",
+			"Wraps up but adds nothing — ends cleanly without leaving the reader with a new thought or action",
+			"Concrete takeaway — ends on a specific decision rule, next action, or insight",
+			"Sticks — the ending reframes the topic or gives the reader something they'll remember and act on"
+		]
+	}
+}
