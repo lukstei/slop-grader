@@ -1,4 +1,4 @@
-- Prefer snapshot testing instead of a list of assertions
+- Prefer snapshot testing instead of a list of assertions, use inline snapshots preferably
 - Run `npm run verify` when completing a task (not after every intermediate edit)
 - Never add any backwards compatibility regarding the code, there is no external consumer of the code
 - Never use any or unkown in normal circumstances

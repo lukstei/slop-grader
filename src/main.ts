@@ -1,4 +1,6 @@
+import { realpathSync } from "node:fs";
 import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { gradeDocument, gradeLines, loadLines, loadRules } from "./grader.ts";
 import { createProvider, type ProviderName } from "./provider.ts";
@@ -106,11 +108,18 @@ async function main() {
 	}
 }
 
-// Only invoke main if executed directly
-if (
-	process.argv[1] &&
-	(process.argv[1] === new URL(import.meta.url).pathname ||
-		process.argv[1].endsWith("/slop-grader.mjs"))
-) {
-	main();
+function isMain(): boolean {
+	if (!process.argv[1]) return false;
+	try {
+		return realpathSync(process.argv[1]) === fileURLToPath(import.meta.url);
+	} catch {
+		return false;
+	}
+}
+
+if (isMain()) {
+	main().catch((err: Error) => {
+		console.error(`Error: ${err.message}`);
+		process.exitCode = 1;
+	});
 }

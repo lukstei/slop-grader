@@ -12,7 +12,9 @@ export class JevProvider implements Provider {
 	readonly #client: TypeSafeClient;
 
 	constructor() {
-		this.#client = new TypeSafeClient();
+		const apiKey = process.env.TYPESAFE_API_KEY;
+		assert(apiKey, "Missing TYPESAFE_API_KEY environment variable.");
+		this.#client = new TypeSafeClient({ apiKey });
 	}
 
 	async createDecision(

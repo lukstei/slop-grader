@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import type { DecisionsRequest } from "@openrouter/sdk/models/decisionsrequest";
 import type { Answers } from "@openrouter/sdk/models/decisionsresponse";
 import type { Provider } from "../provider.ts";
@@ -8,7 +9,9 @@ export class OpenRouterProvider implements Provider {
 	readonly #apiKey: string;
 
 	constructor() {
-		this.#apiKey = process.env.OPENROUTER_API_KEY ?? "";
+		const apiKey = process.env.OPENROUTER_API_KEY;
+		assert(apiKey, "Missing OPENROUTER_API_KEY environment variable.");
+		this.#apiKey = apiKey;
 	}
 
 	async createDecision(
