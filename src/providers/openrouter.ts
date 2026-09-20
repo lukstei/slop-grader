@@ -4,7 +4,7 @@ import type { Answers } from "@openrouter/sdk/models/decisionsresponse";
 import type { Provider } from "../provider.ts";
 
 const OPENROUTER_API_URL = "https://openrouter.ai/api/alpha/decisions";
-const DEFAULT_MODEL = "typesafe/jev-latest";
+const DEFAULT_MODEL = "~typesafe/jev-latest";
 
 export class OpenRouterProvider implements Provider {
 	readonly #apiKey: string;

@@ -16,7 +16,7 @@ import type {
 export type { RuleSet };
 export { parseMarkdownRules };
 
-export const MODEL = "typesafe/jev-latest";
+export const MODEL = "~typesafe/jev-latest";
 export const THRESHOLD = 0.8;
 export const BATCH_SIZE = 255;
 

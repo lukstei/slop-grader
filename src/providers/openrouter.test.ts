@@ -24,7 +24,7 @@ describe("OpenRouterProvider", () => {
 		);
 	});
 
-	it("sends request with hardcoded model typesafe/jev-1.13", async () => {
+	it("sends request with default model ~typesafe/jev-latest", async () => {
 		let capturedUrl = "";
 		let capturedInit: RequestInit | undefined;
 
@@ -68,7 +68,7 @@ describe("OpenRouterProvider", () => {
 		);
 		expect(JSON.parse(capturedInit?.body as string)).toMatchInlineSnapshot(`
 			{
-			  "model": "typesafe/jev-latest",
+			  "model": "~typesafe/jev-latest",
 			  "questions": {
 			    "is_slop": {
 			      "instructions": "Is this slop?",
@@ -101,7 +101,7 @@ describe("OpenRouterProvider", () => {
 		const provider = new OpenRouterProvider();
 		await expect(
 			provider.createDecision({
-				model: "typesafe/jev-latest",
+				model: "~typesafe/jev-latest",
 				state: "Sample",
 				questions: {},
 			}),
