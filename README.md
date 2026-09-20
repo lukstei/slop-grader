@@ -1,3 +1,5 @@
+<img src="assets/icon.png" alt="slop-grader" width="200" />
+
 # slop-grader
 
 
@@ -5,8 +7,6 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![NPM Version](https://img.shields.io/npm/v/@lukstei/slop-grader.svg)](https://www.npmjs.com/package/@lukstei/slop-grader)
 [![Minified Size](https://badgen.net/bundlephobia/min/@lukstei/slop-grader)](https://bundlephobia.com/package/@lukstei/slop-grader)
-
-<img src="assets/icon.png" alt="slop-grader" width="200" />
 
 Rule-based slop grader for text files, powered by [Jev](https://typesafe.ai).
 
@@ -19,42 +19,16 @@ Rule-based slop grader for text files, powered by [Jev](https://typesafe.ai).
 Run `slop-grader` on a document like [`examples/slop.md`](examples/slop.md):
 
 ```sh
-npx @lukstei/slop-grader@latest -r no-ai-slop -r grammar-english -r tech-docs examples/slop.md
+npx @lukstei/slop-grader@latest -r no-ai-slop examples/slop.md
 ```
 
-Output:
-
-```
-Use the SKILL `/path/to/slop-grader/SKILL.md` to improve `/path/to/slop-grader/examples/slop.md`.
-
-Rules:
-  /path/to/slop-grader/rules/no-ai-slop.md
-  /path/to/slop-grader/rules/grammar-english.md
-  /path/to/slop-grader/rules/tech-docs.md
-
-A=banned_word, B=empty_adverb, D=binary_contrast, F=faux_insight, G=colon_reveal, ...
-
-A               | L0001: # 🚀 The Ultimate Paradigm Shift in Modern Data Architecture
-A               | L0003: In this article, we will delve into the rich tapestry of modern distributed systems and explore how they seamlessly empower developers to unlock their true potential.
-D,F,G,Q         | L0007: What most people get wrong about databases is simple: it's not about speed, it's about trust.
-G               | L0009: The secret: it's all about asynchronous event-driven pipelines.
-N               | L0011: Studies show that 90% of architectures fail because of poor alignment.
-...
-
-## Document Scores
-
-structure_navigability  0.6/3   (confidence mid )  "Wall of text" ↔ "Has headings but they are vague or inconsistent"
-task_orientation        0.6/3   (confidence mid )  "Architecture dump" ↔ "Mixed"
-completeness            0.0/3   (confidence high)  "Fragment — critical steps, configuration, or context are missing"
-code_example_quality    0.1/3   (confidence high)  "No examples, or examples are pseudocode fragments that cannot run"
-prerequisite_clarity    0.6/3   (confidence mid )  "No prerequisites stated" ↔ "Partially stated"
-```
+![Terminal output](assets/terminal.png)
 
 ### 2. Fix with an AI agent
 
 Pass the output to your AI agent:
 
-- The agent distinguishes real violations from false positives and generates concrete replacements (example plan with Gemini 3.8 Flash: [full plan](examples/plan.md)):
+- The agent distinguishes real violations from false positives and generates concrete replacements ([Example with Gemini 3.8 Flash](examples/plan.md)):
   ```markdown
   ### Line 1 — `banned_word`
   - **Original:** `# 🚀 The Ultimate Paradigm Shift in Modern Data Architecture`
