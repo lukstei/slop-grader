@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import type { Questions } from "@openrouter/sdk/models/decisionsrequest";
 import type { DecisionsScoreAnswer } from "@openrouter/sdk/models/decisionsscoreanswer";
 import type { DecisionsScoreQuestion } from "@openrouter/sdk/models/decisionsscorequestion";
@@ -6,6 +7,17 @@ import type { FlagMap, Line, Stats } from "./types.ts";
 
 export const CONF_HIGH = 0.8;
 export const CONF_MID = 0.5;
+
+export function indexToRuleKey(index: number): string {
+	assert(index >= 0, "Rule index must be non-negative");
+	let key = "";
+	let n = index;
+	while (n >= 0) {
+		key = String.fromCharCode(65 + (n % 26)) + key;
+		n = Math.floor(n / 26) - 1;
+	}
+	return key;
+}
 
 export function confidenceTier(conf: number): "low" | "mid" | "high" {
 	if (conf >= CONF_HIGH) return "high";
@@ -20,7 +32,7 @@ export function formatLineReport(
 ): string[] {
 	if (!Object.keys(questions).length) return [];
 	const ids = Object.keys(questions).map(
-		(k, i) => [k, String.fromCharCode("A".charCodeAt(0) + i)] as const,
+		(k, i) => [k, indexToRuleKey(i)] as const,
 	);
 	const keyToLetter = new Map(ids.map(([k, v]) => [k, v]));
 
@@ -28,14 +40,21 @@ export function formatLineReport(
 	out.push(ids.map(([k, v]) => `${v}=${k}`).join(", "));
 	out.push("");
 
+	let hasViolations = false;
 	for (const { lineNum, text } of lines) {
 		const lineFlags = flags.get(lineNum);
 		if (!lineFlags?.length) continue;
+		hasViolations = true;
 		const letters = lineFlags.map((k) => keyToLetter.get(k) ?? k);
 		out.push(
 			`${letters.join(",").padEnd(15)} | ${lineMarker(lineNum)}: ${text}`,
 		);
 	}
+
+	if (!hasViolations) {
+		out.push("No line rule violations found.");
+	}
+
 	return out;
 }
 
@@ -45,9 +64,8 @@ export function formatDocumentScores(
 ): string[] {
 	if (!Object.keys(scores).length) return [];
 
-	const separator = "─".repeat(52);
 	const out: string[] = [];
-	out.push(`\n── Document Scores ${separator}\n`);
+	out.push("\n## Document Scores\n");
 
 	const nameWidth = Math.max(...Object.keys(scores).map((k) => k.length));
 
@@ -83,13 +101,12 @@ export function formatDocumentScores(
 }
 
 export function formatStats(stats: Stats): string[] {
-	const separator = "─".repeat(52);
 	const breakdown =
 		stats.docRules > 0 && stats.lineRules > 0
 			? ` (${stats.lineRules} line, ${stats.docRules} document)`
 			: "";
 	return [
-		`\n── Stats ${separator}\n`,
+		"\n## Stats\n",
 		`Rules applied:    ${stats.rules}${breakdown}`,
 		`Lines evaluated:  ${stats.lines}`,
 		`Questions asked:  ${stats.questions}`,

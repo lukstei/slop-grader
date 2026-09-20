@@ -5,9 +5,9 @@
 [![NPM Version](https://img.shields.io/npm/v/@lukstei/slop-grader.svg)](https://www.npmjs.com/package/@lukstei/slop-grader)
 [![Minified Size](https://badgen.net/bundlephobia/min/@lukstei/slop-grader)](https://bundlephobia.com/package/@lukstei/slop-grader)
 
-Jev-powered, rule-based slop grader for text files.
+[Jev](https://typesafe.ai)-powered, rule-based slop grader for text files.
 
-Run it on a draft. Copy the output into an AI agent. The agent uses the bundled `SKILL.md` to triage false positives and produce a minimal fix plan.
+> Run it on a document, copy the output into an AI agent. The agent uses the bundled `SKILL.md` to triage false positives and produce a minimal fix plan.
 
 ## Usage
 
@@ -24,7 +24,7 @@ npx @lukstei/slop-grader@latest -r <ruleset> [-r <ruleset> ...] [--json] [--stat
 Example:
 
 ```sh
-npx @lukstei/slop-grader@latest -r no-ai-slop -r article-scores my-draft.txt
+npx @lukstei/slop-grader@latest -r no-ai-slop -r article-scores my-draft.md
 ```
 
 Pass a ruleset by bare name (resolved from the built-in `rules/` directory) or by path to a custom JSON file.
