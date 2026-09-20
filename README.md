@@ -87,13 +87,13 @@ npx @lukstei/slop-grader@latest -r no-ai-slop -r article-scores my-draft.md
 
 Pass built-in rulesets by name:
 
-| Ruleset | Scope | What it checks |
-|---|---|---|
-| [`article-scores`](rules/article-scores.md) | Document | Document-level scores: engagement, narrative arc, closing strength |
-| [`tech-docs`](rules/tech-docs.md) | Document & Line | Technical documentation patterns: structure, task orientation, completeness, code examples, minimizing complexity |
-| [`grammar-english`](rules/grammar-english.md) | Line | English grammar: typos, passive voice, comma splices, run-ons, subject-verb disagreement |
-| [`grammar-german`](rules/grammar-german.md) | Line | German grammar: capitalization, comma splices, Anglicisms, compound spelling |
-| [`no-ai-slop`](rules/no-ai-slop.md) | Line | Banned words, empty adverbs, puffery, colon reveals, bold lead-in lists, weasel attribution, dramatic fragmentation |
+| Ruleset | What it checks |
+|---|---|
+| [`article-scores`](rules/article-scores.md) | Document-level scores: engagement, narrative arc, closing strength |
+| [`tech-docs`](rules/tech-docs.md) | Technical documentation patterns: structure, task orientation, completeness, code examples, minimizing complexity |
+| [`grammar-english`](rules/grammar-english.md) | English grammar: typos, passive voice, comma splices, run-ons, subject-verb disagreement |
+| [`grammar-german`](rules/grammar-german.md) | German grammar: capitalization, comma splices, Anglicisms, compound spelling |
+| [`no-ai-slop`](rules/no-ai-slop.md) | Banned words, empty adverbs, puffery, colon reveals, bold lead-in lists, weasel attribution, dramatic fragmentation |
 
 ### Custom rulesets
 
