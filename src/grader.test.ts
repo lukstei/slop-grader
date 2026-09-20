@@ -22,18 +22,56 @@ Second line with whitespace
    
 Third line`;
 		const result = parseLines(input);
-		expect(result).toMatchSnapshot();
+		expect(result).toMatchInlineSnapshot(`
+			[
+			  {
+			    "lineNum": 1,
+			    "text": "First line",
+			  },
+			  {
+			    "lineNum": 3,
+			    "text": "Second line with whitespace",
+			  },
+			  {
+			    "lineNum": 5,
+			    "text": "Third line",
+			  },
+			]
+		`);
 	});
 
 	it("lineMarker formats line numbers with zero-padding", () => {
 		const markers = [1, 10, 100, 1000].map(lineMarker);
-		expect(markers).toMatchSnapshot();
+		expect(markers).toMatchInlineSnapshot(`
+			[
+			  "L0001",
+			  "L0010",
+			  "L0100",
+			  "L1000",
+			]
+		`);
 	});
 
 	it("chunk splits array into chunks of given size", () => {
 		const items = [1, 2, 3, 4, 5, 6, 7];
 		const result = chunk(items, 3);
-		expect(result).toMatchSnapshot();
+		expect(result).toMatchInlineSnapshot(`
+			[
+			  [
+			    1,
+			    2,
+			    3,
+			  ],
+			  [
+			    4,
+			    5,
+			    6,
+			  ],
+			  [
+			    7,
+			  ],
+			]
+		`);
 	});
 
 	it("splitRules separates line and document scoped rules", () => {
@@ -55,7 +93,27 @@ Third line`;
 			},
 		];
 		const result = splitRules(raw);
-		expect(result).toMatchSnapshot();
+		expect(result).toMatchInlineSnapshot(`
+			{
+			  "docRules": {
+			    "narrative_arc": {
+			      "criteria": [
+			        "Weak",
+			        "Medium",
+			        "Strong",
+			      ],
+			      "instructions": "Evaluate narrative arc",
+			      "type": "score",
+			    },
+			  },
+			  "lineRules": {
+			    "banned_word": {
+			      "instructions": "Check for banned words",
+			      "type": "noul",
+			    },
+			  },
+			}
+		`);
 	});
 
 	it("splitRules throws when rule scope is invalid", () => {
@@ -66,7 +124,9 @@ Third line`;
 				instructions: "Invalid scope test",
 			},
 		};
-		expect(() => splitRules([invalidRule])).toThrowErrorMatchingSnapshot();
+		expect(() => splitRules([invalidRule])).toThrowErrorMatchingInlineSnapshot(
+			`[AssertionError: Rule "bad_rule" is missing a valid "scope" field ("line" or "document")]`,
+		);
 	});
 
 	it("buildBatchRequest generates formatted state and question prompts", () => {
@@ -79,7 +139,22 @@ Third line`;
 			instructions: "Does this contain slop?",
 		};
 		const result = buildBatchRequest(lines, qDef);
-		expect(result).toMatchSnapshot();
+		expect(result).toMatchInlineSnapshot(`
+			{
+			  "batchQuestions": {
+			    "L0001": {
+			      "instructions": "For the line L0001 answer: Does this contain slop?",
+			      "type": "noul",
+			    },
+			    "L0002": {
+			      "instructions": "For the line L0002 answer: Does this contain slop?",
+			      "type": "noul",
+			    },
+			  },
+			  "state": "L0001| Hello world
+			L0002| Second line",
+			}
+		`);
 	});
 
 	it("extractLineFlags filters answers exceeding threshold", () => {
@@ -100,7 +175,23 @@ Third line`;
 			},
 		];
 		const flags = extractLineFlags(results, 0.8);
-		expect(Array.from(flags.entries())).toMatchSnapshot();
+		expect(Array.from(flags.entries())).toMatchInlineSnapshot(`
+			[
+			  [
+			    1,
+			    [
+			      "rule_a",
+			      "rule_b",
+			    ],
+			  ],
+			  [
+			    3,
+			    [
+			      "rule_b",
+			    ],
+			  ],
+			]
+		`);
 	});
 
 	it("extractDocumentScores extracts score answers", () => {
@@ -116,7 +207,15 @@ Third line`;
 			},
 		};
 		const scores = extractDocumentScores(answers);
-		expect(scores).toMatchSnapshot();
+		expect(scores).toMatchInlineSnapshot(`
+			{
+			  "clarity": {
+			    "confidence": 0.9,
+			    "score": 2.5,
+			    "type": "score",
+			  },
+			}
+		`);
 	});
 
 	it("gradeLines and gradeDocument with mock provider", async () => {
@@ -144,7 +243,16 @@ Third line`;
 			},
 		};
 		const flags = await gradeLines(lines, lineRules, mockProvider);
-		expect(Array.from(flags.entries())).toMatchSnapshot();
+		expect(Array.from(flags.entries())).toMatchInlineSnapshot(`
+			[
+			  [
+			    1,
+			    [
+			      "banned_word",
+			    ],
+			  ],
+			]
+		`);
 
 		const docRules = {
 			engagement: {
@@ -154,6 +262,14 @@ Third line`;
 			},
 		};
 		const scores = await gradeDocument("Sample text", docRules, mockProvider);
-		expect(scores).toMatchSnapshot();
+		expect(scores).toMatchInlineSnapshot(`
+			{
+			  "engagement": {
+			    "confidence": 0.85,
+			    "score": 2.8,
+			    "type": "score",
+			  },
+			}
+		`);
 	});
 });

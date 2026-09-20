@@ -14,7 +14,17 @@ describe("main CLI", () => {
 
 	it("parseCliArgs parses valid arguments with defaults", () => {
 		const parsed = parseCliArgs(["-r", "no-ai-slop", "README.md"]);
-		expect(parsed).toMatchSnapshot();
+		expect(parsed).toMatchInlineSnapshot(`
+			{
+			  "file": "README.md",
+			  "json": false,
+			  "provider": undefined,
+			  "rulesPaths": [
+			    "/Users/Lukas.Steinbrecher/dev/slop-grader/rules/no-ai-slop.json",
+			  ],
+			  "stats": false,
+			}
+		`);
 	});
 
 	it("parseCliArgs parses multiple rules and options", () => {
@@ -28,7 +38,18 @@ describe("main CLI", () => {
 			"--json",
 			"README.md",
 		]);
-		expect(parsed).toMatchSnapshot();
+		expect(parsed).toMatchInlineSnapshot(`
+			{
+			  "file": "README.md",
+			  "json": true,
+			  "provider": "openrouter",
+			  "rulesPaths": [
+			    "/Users/Lukas.Steinbrecher/dev/slop-grader/rules/no-ai-slop.json",
+			    "/Users/Lukas.Steinbrecher/dev/slop-grader/rules/tech-docs.json",
+			  ],
+			  "stats": false,
+			}
+		`);
 	});
 
 	it("parseCliArgs parses --stats flag", () => {
@@ -37,16 +58,26 @@ describe("main CLI", () => {
 	});
 
 	it("parseCliArgs throws usage on missing arguments", () => {
-		expect(() => parseCliArgs([])).toThrowErrorMatchingSnapshot();
-		expect(() => parseCliArgs(["README.md"])).toThrowErrorMatchingSnapshot();
+		expect(() => parseCliArgs([])).toThrowErrorMatchingInlineSnapshot(
+			`[Error: usage: node main.ts -r <name|path> [-r ...] [--provider <jev|openrouter>] [--json] [--stats] <file>]`,
+		);
+		expect(() =>
+			parseCliArgs(["README.md"]),
+		).toThrowErrorMatchingInlineSnapshot(
+			`[Error: usage: node main.ts -r <name|path> [-r ...] [--provider <jev|openrouter>] [--json] [--stats] <file>]`,
+		);
 		expect(() =>
 			parseCliArgs(["-r", "no-ai-slop"]),
-		).toThrowErrorMatchingSnapshot();
+		).toThrowErrorMatchingInlineSnapshot(
+			`[Error: usage: node main.ts -r <name|path> [-r ...] [--provider <jev|openrouter>] [--json] [--stats] <file>]`,
+		);
 	});
 
 	it("parseCliArgs throws on invalid provider", () => {
 		expect(() =>
 			parseCliArgs(["-r", "no-ai-slop", "-p", "invalid", "README.md"]),
-		).toThrowErrorMatchingSnapshot();
+		).toThrowErrorMatchingInlineSnapshot(
+			`[Error: Unknown provider "invalid". Valid values: jev, openrouter]`,
+		);
 	});
 });

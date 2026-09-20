@@ -14,7 +14,34 @@ describe("report", () => {
 			conf: c,
 			tier: confidenceTier(c),
 		}));
-		expect(levels).toMatchSnapshot();
+		expect(levels).toMatchInlineSnapshot(`
+			[
+			  {
+			    "conf": 0.9,
+			    "tier": "high",
+			  },
+			  {
+			    "conf": 0.8,
+			    "tier": "high",
+			  },
+			  {
+			    "conf": 0.7,
+			    "tier": "mid",
+			  },
+			  {
+			    "conf": 0.5,
+			    "tier": "mid",
+			  },
+			  {
+			    "conf": 0.4,
+			    "tier": "low",
+			  },
+			  {
+			    "conf": 0,
+			    "tier": "low",
+			  },
+			]
+		`);
 	});
 
 	it("formatLineReport formats flagged lines with letter keys", () => {
@@ -33,7 +60,14 @@ describe("report", () => {
 		};
 
 		const report = formatLineReport(lines, flags, questions);
-		expect(report).toMatchSnapshot();
+		expect(report).toMatchInlineSnapshot(`
+			[
+			  "A=banned_word, B=puffery",
+			  "",
+			  "A,B             | L0001: Empowering our users",
+			  "A               | L0003: Another bad line",
+			]
+		`);
 	});
 
 	it("formatDocumentScores formats scores with criteria and confidence", () => {
@@ -68,7 +102,15 @@ describe("report", () => {
 		};
 
 		const formatted = formatDocumentScores(scores, questions);
-		expect(formatted).toMatchSnapshot();
+		expect(formatted).toMatchInlineSnapshot(`
+			[
+			  "
+			── Document Scores ────────────────────────────────────────────────────
+			",
+			  "engagement  2.5/3   (confidence mid )  "Good" ↔ "Exceptional"",
+			  "clarity     2.0/2   (confidence high)  "Crystal clear"",
+			]
+		`);
 	});
 
 	it("formatJson produces structured JSON output", () => {
@@ -100,7 +142,33 @@ describe("report", () => {
 			scores,
 			docQuestions,
 		);
-		expect(JSON.parse(jsonStr)).toMatchSnapshot();
+		expect(JSON.parse(jsonStr)).toMatchInlineSnapshot(`
+			{
+			  "file": "/path/to/file.txt",
+			  "rules": [
+			    "/path/to/rules.json",
+			  ],
+			  "violations": {
+			    "document": {
+			      "engagement": {
+			        "confidence": 0.85,
+			        "label": "High",
+			        "max": 2,
+			        "score": 2,
+			      },
+			    },
+			    "lines": [
+			      {
+			        "lineNum": 1,
+			        "rules": [
+			          "banned_word",
+			        ],
+			        "text": "Empowering our users",
+			      },
+			    ],
+			  },
+			}
+		`);
 	});
 
 	it("formatStats formats execution stats with breakdown", () => {
