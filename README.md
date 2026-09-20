@@ -25,10 +25,8 @@ Pass a ruleset by bare name (resolved from the built-in `rules/` directory) or b
 |---|---|
 | `no-ai-slop` | Banned words, empty adverbs, puffery, colon reveals, weasel attribution, dramatic fragmentation |
 | `article-scores` | Document-level scores: engagement, narrative arc, closing strength |
-| `editorial` | Voice, clarity, and structural clichés |
 | `grammar-english` | English grammar |
 | `grammar-german` | German grammar |
-| `legal` | Missing price disclosures, unverified rankings, disguised commercial intent |
 | `tech-docs` | Technical documentation patterns |
 
 ## Output
