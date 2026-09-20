@@ -56,11 +56,11 @@ Grading runs on `typesafe/jev-1.13` across both providers.
 
 | Ruleset | Scope | What it checks |
 |---|---|---|
-| `no-ai-slop` | Line | Banned words, empty adverbs, puffery, colon reveals, weasel attribution, dramatic fragmentation |
-| `article-scores` | Document | Document-level scores: engagement, narrative arc, closing strength |
-| `grammar-english` | Line | English grammar: typos, passive voice, comma splices, run-ons, subject-verb disagreement |
-| `grammar-german` | Line | German grammar: capitalization, comma splices, Anglicisms, compound spelling |
-| `tech-docs` | Document | Technical documentation patterns: structure, task orientation, completeness, code examples |
+| [`article-scores`](rules/article-scores.json) | Document | Document-level scores: engagement, narrative arc, closing strength |
+| [`tech-docs`](rules/tech-docs.json) | Document | Technical documentation patterns: structure, task orientation, completeness, code examples |
+| [`grammar-english`](rules/grammar-english.json) | Line | English grammar: typos, passive voice, comma splices, run-ons, subject-verb disagreement |
+| [`grammar-german`](rules/grammar-german.json) | Line | German grammar: capitalization, comma splices, Anglicisms, compound spelling |
+| [`no-ai-slop`](rules/no-ai-slop.json) | Line | Banned words, empty adverbs, puffery, colon reveals, weasel attribution, dramatic fragmentation |
 
 ## Output
 
