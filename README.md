@@ -22,7 +22,7 @@ Run `slop-grader` on a document like [`examples/slop.md`](examples/slop.md):
 npx @lukstei/slop-grader@latest -r no-ai-slop examples/slop.md
 ```
 
-![Terminal output](assets/terminal.png)
+<img src="assets/terminal.png" alt="Terminal output" width="450" />
 
 ### 2. Fix with an AI agent
 
