@@ -11,14 +11,19 @@ Run it on a draft. Copy the output into an AI agent. The agent uses the bundled 
 ## Usage
 
 ```sh
+# Option 1: Direct Jev via TypeSafe AI
+export TYPESAFE_API_KEY=...
+
+# Option 2: Via OpenRouter
 export OPENROUTER_API_KEY=sk-or-...
-npx @lukstei/slop-grader -r <ruleset> [-r <ruleset> ...] [--json] <file>
+
+npx @lukstei/slop-grader@latest -r <ruleset> [-r <ruleset> ...] [--json] <file>
 ```
 
 Example:
 
 ```sh
-npx @lukstei/slop-grader -r no-ai-slop -r article-scores my-draft.txt
+npx @lukstei/slop-grader@latest -r no-ai-slop -r article-scores my-draft.txt
 ```
 
 Pass a ruleset by bare name (resolved from the built-in `rules/` directory) or by path to a custom JSON file.
@@ -31,15 +36,30 @@ Pass a ruleset by bare name (resolved from the built-in `rules/` directory) or b
 | `--provider <jev\|openrouter>` | `-p` | Override the AI provider. |
 | `--json` | `-j` | Emit structured JSON instead of the human-readable report. |
 
+### Environment variables
+
+| Variable | Description |
+|---|---|
+| `TYPESAFE_API_KEY` | API key for direct Jev access via TypeSafe AI. Automatically selects the `jev` provider. |
+| `OPENROUTER_API_KEY` | API key for OpenRouter. Automatically selects the `openrouter` provider. |
+| `TYPESAFE_PROVIDER` | Explicitly choose `jev` or `openrouter` without passing `--provider`. |
+
+Provider resolution order:
+1. `--provider` (`-p`) flag
+2. `TYPESAFE_PROVIDER` environment variable
+3. Auto-detected from keys (`TYPESAFE_API_KEY` selects `jev`; `OPENROUTER_API_KEY` selects `openrouter`)
+
+Grading runs on `typesafe/jev-1.13` across both providers.
+
 ## Built-in rulesets
 
-| Ruleset | What it checks |
-|---|---|
-| `no-ai-slop` | Banned words, empty adverbs, puffery, colon reveals, weasel attribution, dramatic fragmentation |
-| `article-scores` | Document-level scores: engagement, narrative arc, closing strength |
-| `grammar-english` | English grammar |
-| `grammar-german` | German grammar |
-| `tech-docs` | Technical documentation patterns |
+| Ruleset | Scope | What it checks |
+|---|---|---|
+| `no-ai-slop` | Line | Banned words, empty adverbs, puffery, colon reveals, weasel attribution, dramatic fragmentation |
+| `article-scores` | Document | Document-level scores: engagement, narrative arc, closing strength |
+| `grammar-english` | Line | English grammar: typos, passive voice, comma splices, run-ons, subject-verb disagreement |
+| `grammar-german` | Line | German grammar: capitalization, comma splices, Anglicisms, compound spelling |
+| `tech-docs` | Document | Technical documentation patterns: structure, task orientation, completeness, code examples |
 
 ## Output
 
@@ -63,7 +83,7 @@ Only lines that cross the 0.8 confidence threshold appear. Clean lines are not p
 Pass `--json` (or `-j`) to get machine-readable output instead:
 
 ```sh
-npx @lukstei/slop-grader -r no-ai-slop -r article-scores --json my-draft.txt | jq .
+npx @lukstei/slop-grader@latest -r no-ai-slop -r article-scores --json my-draft.txt | jq .
 ```
 
 ```json
@@ -123,11 +143,22 @@ A ruleset is a JSON file. Each key is a rule. Two scopes:
 }
 ```
 
+## Development
+
+```sh
+npm test         # Run vitest snapshot tests
+npm run verify   # Run typecheck, biome lint, and tests
+npm run build    # Build with esbuild to dist/slop-grader.mjs
+```
+
 ## Requirements
 
 - Node.js 18+
-- `OPENROUTER_API_KEY` — get one at [openrouter.ai](https://openrouter.ai)
+- An API key for your chosen provider:
+  - `TYPESAFE_API_KEY` — get one at [typesafe.ai](https://typesafe.ai)
+  - `OPENROUTER_API_KEY` — get one at [openrouter.ai](https://openrouter.ai)
 
 ## License
 
 MIT
+
