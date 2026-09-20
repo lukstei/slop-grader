@@ -8,6 +8,7 @@ import {
 	gradeDocument,
 	gradeLines,
 	lineMarker,
+	loadRules,
 	parseLines,
 	splitRules,
 } from "./grader.ts";
@@ -271,5 +272,16 @@ Third line`;
 			  },
 			}
 		`);
+	});
+
+	it("loadRules loads and splits markdown rule files", async () => {
+		const { lineRules, docRules } = await loadRules([
+			"rules/no-ai-slop.md",
+			"rules/article-scores.md",
+		]);
+		expect(Object.keys(lineRules).length).toBe(21);
+		expect(Object.keys(docRules).length).toBe(8);
+		expect(lineRules.banned_word).toBeDefined();
+		expect(docRules.engagement).toBeDefined();
 	});
 });

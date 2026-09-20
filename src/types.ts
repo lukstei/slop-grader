@@ -1,12 +1,33 @@
-import type { Questions } from "@openrouter/sdk/models/decisionsrequest";
-import type { DecisionsScoreQuestion } from "@openrouter/sdk/models/decisionsscorequestion";
-
 export type Line = { lineNum: number; text: string };
 export type FlagMap = Map<number, string[]>;
 
-export type LineRule = Questions & { scope: "line" };
-export type DocumentRule = DecisionsScoreQuestion & { scope: "document" };
+export type NoulQuestion = {
+	type: "noul";
+	instructions: string;
+	criteria?: {
+		true: string;
+		false: string;
+	};
+};
+
+export type ScoreQuestion = {
+	type: "score";
+	instructions: string;
+	criteria: string[];
+};
+
+export type Question = NoulQuestion | ScoreQuestion;
+
+export type LineRule = NoulQuestion & { scope: "line" };
+export type DocumentRule = (ScoreQuestion | NoulQuestion) & {
+	scope: "document";
+};
 export type Rule = LineRule | DocumentRule;
+
+export type RuleSet = {
+	lineRules: Record<string, NoulQuestion>;
+	docRules: Record<string, Question>;
+};
 
 export type Stats = {
 	rules: number;

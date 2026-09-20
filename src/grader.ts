@@ -1,11 +1,20 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import type { Questions } from "@openrouter/sdk/models/decisionsrequest";
 import type { Answers } from "@openrouter/sdk/models/decisionsresponse";
 import type { DecisionsScoreAnswer } from "@openrouter/sdk/models/decisionsscoreanswer";
-import type { DecisionsScoreQuestion } from "@openrouter/sdk/models/decisionsscorequestion";
+import { parseMarkdownRules } from "./markdown/rules.ts";
 import type { Provider } from "./provider.ts";
-import type { FlagMap, Line, Rule } from "./types.ts";
+import type {
+	FlagMap,
+	Line,
+	NoulQuestion,
+	Question,
+	Rule,
+	RuleSet,
+} from "./types.ts";
+
+export type { RuleSet };
+export { parseMarkdownRules };
 
 export const MODEL = "typesafe/jev-latest";
 export const THRESHOLD = 0.8;
@@ -33,13 +42,10 @@ export function lineMarker(lineNum: number): string {
 	return `L${String(lineNum).padStart(4, "0")}`;
 }
 
-export function splitRules(raw: Record<string, Rule>[]): {
-	lineRules: Record<string, Questions>;
-	docRules: Record<string, DecisionsScoreQuestion>;
-} {
+export function splitRules(raw: Record<string, Rule>[]): RuleSet {
 	const merged = Object.assign({}, ...raw) as Record<string, Rule>;
-	const lineRules: Record<string, Questions> = {};
-	const docRules: Record<string, DecisionsScoreQuestion> = {};
+	const lineRules: Record<string, NoulQuestion> = {};
+	const docRules: Record<string, Question> = {};
 
 	for (const [key, rule] of Object.entries(merged)) {
 		assert(
@@ -60,8 +66,8 @@ export function splitRules(raw: Record<string, Rule>[]): {
 
 export function buildBatchRequest(
 	batch: Line[],
-	qDef: Questions,
-): { state: string; batchQuestions: Record<string, Questions> } {
+	qDef: NoulQuestion,
+): { state: string; batchQuestions: Record<string, NoulQuestion> } {
 	const state = batch
 		.map(({ lineNum, text }) => `${lineMarker(lineNum)}| ${text}`)
 		.join("\n");
@@ -111,14 +117,15 @@ export function extractDocumentScores(
 
 // ── Side Effects (I/O & Providers) ───────────────────────────────────────────
 
-export async function loadRules(paths: string[]): Promise<{
-	lineRules: Record<string, Questions>;
-	docRules: Record<string, DecisionsScoreQuestion>;
-}> {
+export async function loadRules(paths: string[]): Promise<RuleSet> {
 	const raw = await Promise.all(
-		paths.map((p) =>
-			readFile(p, "utf8").then((s) => JSON.parse(s) as Record<string, Rule>),
-		),
+		paths.map(async (p) => {
+			const content = await readFile(p, "utf8");
+			if (p.endsWith(".md")) {
+				return parseMarkdownRules(content, p);
+			}
+			return JSON.parse(content) as Record<string, Rule>;
+		}),
 	);
 	return splitRules(raw);
 }
@@ -130,7 +137,7 @@ export async function loadLines(filePath: string): Promise<Line[]> {
 
 export async function gradeLines(
 	lines: Line[],
-	questions: Record<string, Questions>,
+	questions: Record<string, NoulQuestion>,
 	provider: Provider,
 ): Promise<FlagMap> {
 	if (!Object.keys(questions).length) return new Map();
@@ -155,7 +162,7 @@ export async function gradeLines(
 
 export async function gradeDocument(
 	text: string,
-	questions: Record<string, DecisionsScoreQuestion>,
+	questions: Record<string, Question>,
 	provider: Provider,
 ): Promise<Record<string, DecisionsScoreAnswer>> {
 	if (!Object.keys(questions).length) return {};

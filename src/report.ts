@@ -1,9 +1,7 @@
 import assert from "node:assert/strict";
-import type { Questions } from "@openrouter/sdk/models/decisionsrequest";
 import type { DecisionsScoreAnswer } from "@openrouter/sdk/models/decisionsscoreanswer";
-import type { DecisionsScoreQuestion } from "@openrouter/sdk/models/decisionsscorequestion";
 import { lineMarker } from "./grader.ts";
-import type { FlagMap, Line, Stats } from "./types.ts";
+import type { FlagMap, Line, NoulQuestion, Question, Stats } from "./types.ts";
 
 export const CONF_HIGH = 0.8;
 export const CONF_MID = 0.5;
@@ -28,7 +26,7 @@ export function confidenceTier(conf: number): "low" | "mid" | "high" {
 export function formatLineReport(
 	lines: Line[],
 	flags: FlagMap,
-	questions: Record<string, Questions>,
+	questions: Record<string, NoulQuestion>,
 ): string[] {
 	if (!Object.keys(questions).length) return [];
 	const ids = Object.keys(questions).map(
@@ -60,7 +58,7 @@ export function formatLineReport(
 
 export function formatDocumentScores(
 	scores: Record<string, DecisionsScoreAnswer>,
-	questions: Record<string, DecisionsScoreQuestion>,
+	questions: Record<string, Question>,
 ): string[] {
 	if (!Object.keys(scores).length) return [];
 
@@ -71,8 +69,8 @@ export function formatDocumentScores(
 
 	for (const [key, answer] of Object.entries(scores)) {
 		const q = questions[key];
-		const criteria = q?.criteria as string[] | undefined;
-		if (!criteria) continue;
+		if (q?.type !== "score") continue;
+		const { criteria } = q;
 
 		const max = criteria.length - 1;
 		const { score, confidence = 0 } = answer;
@@ -120,7 +118,7 @@ export function formatJson(
 	lines: Line[],
 	flags: FlagMap,
 	scores: Record<string, DecisionsScoreAnswer>,
-	docQuestions: Record<string, DecisionsScoreQuestion>,
+	docQuestions: Record<string, Question>,
 	stats?: Stats,
 ): string {
 	const flaggedLines = lines

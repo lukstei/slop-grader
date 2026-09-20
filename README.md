@@ -25,9 +25,9 @@ Output:
 Use the SKILL `/path/to/slop-grader/SKILL.md` to improve `/path/to/slop-grader/examples/slop.md`.
 
 Rules:
-  /path/to/slop-grader/rules/no-ai-slop.json
-  /path/to/slop-grader/rules/grammar-english.json
-  /path/to/slop-grader/rules/tech-docs.json
+  /path/to/slop-grader/rules/no-ai-slop.md
+  /path/to/slop-grader/rules/grammar-english.md
+  /path/to/slop-grader/rules/tech-docs.md
 
 A=banned_word, B=empty_adverb, D=binary_contrast, F=faux_insight, G=colon_reveal, ...
 
@@ -89,49 +89,41 @@ Pass built-in rulesets by name:
 
 | Ruleset | Scope | What it checks |
 |---|---|---|
-| [`article-scores`](rules/article-scores.json) | Document | Document-level scores: engagement, narrative arc, closing strength |
-| [`tech-docs`](rules/tech-docs.json) | Document | Technical documentation patterns: structure, task orientation, completeness, code examples |
-| [`grammar-english`](rules/grammar-english.json) | Line | English grammar: typos, passive voice, comma splices, run-ons, subject-verb disagreement |
-| [`grammar-german`](rules/grammar-german.json) | Line | German grammar: capitalization, comma splices, Anglicisms, compound spelling |
-| [`no-ai-slop`](rules/no-ai-slop.json) | Line | Banned words, empty adverbs, puffery, colon reveals, bold lead-in lists, weasel attribution, dramatic fragmentation |
+| [`article-scores`](rules/article-scores.md) | Document | Document-level scores: engagement, narrative arc, closing strength |
+| [`tech-docs`](rules/tech-docs.md) | Document & Line | Technical documentation patterns: structure, task orientation, completeness, code examples, minimizing complexity |
+| [`grammar-english`](rules/grammar-english.md) | Line | English grammar: typos, passive voice, comma splices, run-ons, subject-verb disagreement |
+| [`grammar-german`](rules/grammar-german.md) | Line | German grammar: capitalization, comma splices, Anglicisms, compound spelling |
+| [`no-ai-slop`](rules/no-ai-slop.md) | Line | Banned words, empty adverbs, puffery, colon reveals, bold lead-in lists, weasel attribution, dramatic fragmentation |
 
 ### Custom rulesets
 
-Pass a custom ruleset by path to a JSON file (`-r ./my-rules.json`). Each key is a rule with either a `"line"` or `"document"` scope.
+Define custom rules in Markdown (`-r ./my-rules.md`), organized under `# Line Rules` and `# Document Rules` sections:
 
-**Line scope (`"line"`):** Evaluated per line, flagging lines where confidence $\ge 0.8$:
+```markdown
+# Line Rules
 
-```json
-{
-  "empty_adverb": {
-    "scope": "line",
-    "type": "noul",
-    "instructions": "Does the line use an adverb that adds nothing to the meaning?",
-    "criteria": {
-      "true": "The adverb could be deleted without changing the sentence.",
-      "false": "The adverb carries real emphasis or spoken rhythm."
-    }
-  }
-}
+## empty_adverb
+Does the line use an adverb that adds nothing to the meaning?
+
+### Criteria
+- **true**: The adverb could be deleted without changing the sentence.
+- **false**: The adverb carries real emphasis or spoken rhythm.
+
+# Document Rules
+
+## narrative_arc
+Rate the narrative arc of the document.
+
+### Criteria
+- No clear arc — sections feel disconnected
+- Loosely organized — a theme but no build
+- Clear progression — each section sets up the next
+- Tight arc — the ending pays off the opening
 ```
 
-**Document scope (`"document"`):** Evaluated over the full text, producing discrete score distributions (0 to 3):
+See [`docs/SYNTAX.md`](docs/SYNTAX.md) for the complete Markdown rule syntax specification and validation reference.
 
-```json
-{
-  "narrative_arc": {
-    "scope": "document",
-    "type": "score",
-    "instructions": "Rate the narrative arc of the document.",
-    "criteria": [
-      "No clear arc — sections feel disconnected",
-      "Loosely organized — a theme but no build",
-      "Clear progression — each section sets up the next",
-      "Tight arc — the ending pays off the opening"
-    ]
-  }
-}
-```
+Custom JSON rulesets (`-r ./my-rules.json`) are also supported.
 
 ## CLI Reference
 
@@ -143,7 +135,7 @@ npx @lukstei/slop-grader@latest -r <ruleset> [-r <ruleset> ...] [--provider <jev
 
 | Flag | Short | Description |
 |---|---|---|
-| `--rules <name\|path>` | `-r` | Ruleset to apply. Repeatable. Accepts built-in names or JSON file paths. |
+| `--rules <name\|path>` | `-r` | Ruleset to apply. Repeatable. Accepts built-in names, Markdown (`.md`) files, or JSON file paths. |
 | `--provider <jev\|openrouter>` | `-p` | Override the AI provider. |
 | `--model <model>` | `-m` | Override the default model (`jev-latest` for `jev`, `typesafe/jev-latest` for `openrouter`). |
 | `--json` | `-j` | Emit structured JSON instead of the human-readable report. |
@@ -184,7 +176,7 @@ npx @lukstei/slop-grader@latest -r no-ai-slop -r article-scores --json --stats m
 ```json
 {
   "file": "/abs/path/to/my-draft.txt",
-  "rules": ["/abs/path/to/no-ai-slop.json"],
+  "rules": ["/abs/path/to/no-ai-slop.md"],
   "violations": {
     "lines": [
       { "lineNum": 1, "text": "Our platform empowers teams...", "rules": ["banned_word"] }
@@ -227,6 +219,10 @@ npm test         # Run vitest snapshot tests
 npm run verify   # Run typecheck, biome lint, and tests
 npm run build    # Build with esbuild to dist/slop-grader.mjs
 ```
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines, development setup, and coding best practices.
 
 ## License
 

@@ -18,8 +18,8 @@ The tool emits either human-readable text (default) or structured JSON (via `--j
 
 ```
 Rules:
-  /absolute/path/to/no-ai-slop.json
-  /absolute/path/to/article-scores.json
+  /absolute/path/to/no-ai-slop.md
+  /absolute/path/to/article-scores.md
 
 A=banned_word, B=empty_adverb, C=importance_puffery   ← legend
 
@@ -52,7 +52,7 @@ API calls:        6
 ```json
 {
   "file": "/abs/path/to/my-draft.txt",
-  "rules": ["/abs/path/to/no-ai-slop.json"],
+  "rules": ["/abs/path/to/no-ai-slop.md"],
   "violations": {
     "lines": [
       { "lineNum": 1, "text": "Our platform empowers teams...", "rules": ["banned_word"] }

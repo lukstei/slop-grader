@@ -12,7 +12,7 @@ function stripAbsolutePaths(parsed: ReturnType<typeof parseCliArgs>) {
 describe("main CLI", () => {
 	it("resolveRulePath resolves bare names to built-in rules directory", () => {
 		const result = resolveRulePath("no-ai-slop");
-		expect(result).toMatch(/rules\/no-ai-slop\.json$/);
+		expect(result).toMatch(/rules\/no-ai-slop\.md$/);
 	});
 
 	it("resolveRulePath resolves relative paths against cwd", () => {
@@ -30,7 +30,7 @@ describe("main CLI", () => {
 			  "model": undefined,
 			  "provider": undefined,
 			  "rulesPaths": [
-			    "rules/no-ai-slop.json",
+			    "rules/no-ai-slop.md",
 			  ],
 			  "stats": false,
 			}
@@ -56,8 +56,8 @@ describe("main CLI", () => {
 			  "model": undefined,
 			  "provider": "openrouter",
 			  "rulesPaths": [
-			    "rules/no-ai-slop.json",
-			    "rules/tech-docs.json",
+			    "rules/no-ai-slop.md",
+			    "rules/tech-docs.md",
 			  ],
 			  "stats": false,
 			}

@@ -1,0 +1,92 @@
+Technical documentation rules: structure, task orientation, completeness, code examples, prerequisite clarity, and line-level technical writing standards.
+
+# Document Rules
+
+## structure_navigability
+How well is the document structured for a reader who needs to find a specific answer fast?
+
+### Criteria
+- Wall of text — no headings, no visual hierarchy; the reader must read linearly to find anything
+- Has headings but they are vague or inconsistent — the reader can't tell what a section covers from its title alone
+- Well-structured — clear heading hierarchy, logical section order; a reader can scan the table of contents and jump to the right section
+- Highly navigable — sections are self-contained, cross-referenced where needed, and the structure mirrors how a practitioner would think about the task
+
+## task_orientation
+Is the document organized around what the reader needs to DO, or around how the system is built internally?
+
+### Criteria
+- Architecture dump — describes internal components, module structure, or design decisions without connecting them to user tasks
+- Mixed — explains concepts but the reader has to figure out what to do with the information
+- Task-oriented — organized around user goals; the reader can follow it to accomplish something specific
+- Cookbook-grade — each section is a self-contained task with clear inputs, steps, and expected outcomes
+
+## completeness
+Does the document cover everything the reader needs to accomplish the task it describes, or are there gaps that force them to look elsewhere?
+
+### Criteria
+- Fragment — critical steps, configuration, or context are missing; the reader cannot complete the task from this document alone
+- Gaps — covers the main path but omits prerequisites, edge cases, or error handling the reader will likely hit
+- Complete for the common case — a reader on the happy path can finish the task; known limitations are mentioned
+- Self-contained — covers happy path, common errors, edge cases, and links to related docs for anything out of scope
+
+## code_example_quality
+How useful are the code examples in the document? Evaluate whether they are runnable, complete, and illustrative.
+
+### Criteria
+- No examples, or examples are pseudocode fragments that cannot run
+- Snippets exist but are incomplete — missing imports, setup, or context needed to actually use them
+- Examples are complete and runnable — a reader can copy-paste and adapt them to their situation
+- Examples are production-grade — they handle errors, show realistic data, and demonstrate best practices rather than just syntax
+
+## prerequisite_clarity
+Does the document clearly state what the reader needs before starting (tools, versions, accounts, prior knowledge)?
+
+### Criteria
+- No prerequisites stated — the reader discovers missing dependencies mid-task
+- Partially stated — mentions some requirements but omits versions, permissions, or assumed knowledge
+- Clear prerequisites section — lists required tools, versions, accounts, and links to setup instructions
+- Verified prerequisites — states exact versions tested, includes a check command or script the reader can run to confirm readiness
+
+# Line Rules
+
+## minimizing_complexity
+Does the line use "simply", "just", "easy", "straightforward", or "obviously" to minimize a step that may not be simple for the reader?
+
+### Criteria
+- **true**: The word trivializes a step that involves real decisions, configuration, or domain knowledge (e.g. "simply deploy to production", "just configure the firewall").
+- **false**: The word accurately describes a genuinely trivial action (e.g. "just click Save"), or no minimizing word is used.
+
+## undefined_jargon
+Does the line use a technical acronym, abbreviation, or domain-specific term for the first time without defining it or linking to a definition?
+
+### Criteria
+- **true**: A term appears that a reader new to this system would not know, and it is not explained, expanded, or linked on this or a preceding line.
+- **false**: All technical terms are either defined on first use, widely known in the target audience (e.g. HTTP, JSON, API), or have been defined earlier in the document.
+
+## ambiguous_reference
+Does the line use a pronoun or demonstrative ("it", "this", "that", "these") whose antecedent is unclear — i.e. the reader could reasonably attach it to more than one noun?
+
+### Criteria
+- **true**: The pronoun is ambiguous — two or more nouns in the surrounding context could be the referent, and the reader must guess which one is meant.
+- **false**: The pronoun has a single clear antecedent, or the line uses a specific noun instead of a pronoun.
+
+## missing_version_qualifier
+Does the line describe behavior, a CLI command, an API, or a configuration option that is version-dependent without specifying which version it applies to?
+
+### Criteria
+- **true**: The instruction depends on a specific version of a tool, library, or platform, but no version is mentioned (e.g. "run kubectl apply" without stating the Kubernetes version).
+- **false**: The version is stated, the behavior is stable across all relevant versions, or the document's prerequisites section already pins the version.
+
+## magic_value
+Does the line contain a hardcoded constant, URL, port number, timeout, path, or configuration value without explaining why that specific value was chosen?
+
+### Criteria
+- **true**: A specific value appears (e.g. "set timeout to 30000", "use port 8443") without explaining the reasoning, default, or how the reader should adapt it to their context.
+- **false**: The value is explained, is a well-known default, or the context makes the choice obvious.
+
+## stale_placeholder
+Does the line contain an unfilled placeholder, TODO, or template variable that was never replaced with real content (e.g. "YOUR_API_KEY", "<insert here>", "TODO: add example")?
+
+### Criteria
+- **true**: A placeholder or TODO remains in published text that should have been replaced with actual content.
+- **false**: Placeholders are intentional and clearly marked as values the reader should substitute (e.g. in a code template with instructions to replace them).

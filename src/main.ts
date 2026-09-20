@@ -19,7 +19,7 @@ const RULES_DIR = new URL("../rules/", import.meta.url).pathname;
 
 export function resolveRulePath(r: string): string {
 	if (!r.includes("/") && !r.includes("\\") && !r.includes(".")) {
-		return `${RULES_DIR}${r}.json`;
+		return `${RULES_DIR}${r}.md`;
 	}
 	return new URL(r, `file://${process.cwd()}/`).pathname;
 }
