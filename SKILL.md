@@ -1,55 +1,87 @@
 ---
 name: slop-grading
 description: >
-  Review the output of main.ts (the slop grader), interpret flagged lines,
+  Review the output of slop-grader, interpret flagged lines and document scores,
   distinguish genuine violations from false positives, and produce a concrete
   fix plan with edited text for each real issue.
 ---
 
 # Slop Grading — Review & Fix Plan
 
-You receive the stdout of `main.ts` and the original source file. Your job is to triage every flagged line, dismiss false positives, and produce a minimal fix plan with exact replacement text for every genuine violation.
+You receive the output of `slop-grader` (human-readable text or JSON via `--json`) and the original source file. Your job is to triage every flagged line, dismiss false positives, and produce a minimal fix plan with exact replacement text for every genuine violation.
 
-## Output format of main.ts
+## Output formats of slop-grader
 
-The tool prints the rule files it used, then the line-flag report, then the Document Scores block (if document-scoped rules were loaded).
+The tool emits either human-readable text (default) or structured JSON (via `--json` / `-j`).
 
-**Header**
+### Format A — Human-readable text
+
 ```
 Rules:
   /absolute/path/to/no-ai-slop.json
   /absolute/path/to/article-scores.json
-```
 
-**Line flags**
-```
-A=banned_word, B=empty_adverb, C=importance_puffery, ...   ← legend
+A=banned_word, B=empty_adverb, C=importance_puffery   ← legend
 
 A,C           | L0003: The launch marks a pivotal moment for the company.
 B             | L0007: This is just a small update.
-```
 
-- **First line:** legend mapping letters to rule IDs.
-- **Flagged lines:** `<letters> | <line-marker>: <original text>`. Only lines that crossed the threshold (default 0.8) appear.
-- Lines with no flags are clean — do not touch them.
-
-**Document Scores**
-```
-── Document Scores ──────────────────────────────────────────────────
+## Document Scores
 
 engagement       2.7/3   (confidence high)  "Holds attention — creates genuine curiosity..."
 narrative_arc    1.4/3   (confidence mid)   "Loosely organized" ↔ "Clear progression"
-closing_strength 0.3/3   (confidence high)  "Trails off or summarizes"
+closing_strength 0.3/3   (confidence high)  "Trails off or optimizes"
+
+## Stats
+
+Rules applied:    6 (5 line, 1 document)
+Lines evaluated:  12
+Questions asked:  61
+API calls:        6
 ```
 
-- **Score:** probability-weighted mean position across 4 levels (0–3). Higher is better.
-- **Confidence tier:** `high` (≥ 0.8) means the model is sure; `mid` (0.5–0.79) and `low` (< 0.5) mean the distribution is spread.
-- **Single label:** dominant level description when confidence is high or the score sits clearly at one level.
-- **↔ two labels:** shown when the score lands mid-range *and* confidence is `mid` or `low` — the article sits genuinely between those two levels.
+- **Legend:** maps letters to rule IDs (`A`–`Z`, `AA`–`ZZ`).
+- **Flagged lines:** `<letters> | <line-marker>: <original text>`. Only lines that crossed the threshold (default 0.8) appear. If line rules are evaluated but no violations are found, `No line rule violations found.` is displayed.
+- **Document Scores:** probability-weighted mean position across 4 levels (0–3), confidence tier (`high` ≥ 0.8, `mid` 0.5–0.79, `low` < 0.5), and descriptions.
+- **Stats (optional):** execution metrics appended when `--stats` is passed. Ignore this block during triage.
+- **Debug (optional):** when `--debug` is passed, API calls are logged to stderr; ignore stderr output during triage.
+- Lines with no flags are clean — do not touch them.
+
+### Format B — Structured JSON (`--json`)
+
+```json
+{
+  "file": "/abs/path/to/my-draft.txt",
+  "rules": ["/abs/path/to/no-ai-slop.json"],
+  "violations": {
+    "lines": [
+      { "lineNum": 1, "text": "Our platform empowers teams...", "rules": ["banned_word"] }
+    ],
+    "document": {
+      "narrative_arc": { "score": 1.4, "max": 3, "confidence": 0.72, "label": "Loosely organized" }
+    }
+  },
+  "stats": {
+    "rules": 6,
+    "lineRules": 5,
+    "docRules": 1,
+    "lines": 12,
+    "questions": 61,
+    "apiCalls": 6
+  }
+}
+```
+
+- **`violations.lines`:** list of flagged lines with 1-indexed `lineNum`, original `text`, and array of `rules`.
+- **`violations.document`:** document-level scores. Map numerical `confidence` to tiers: `high` (≥ 0.8), `mid` (0.5–0.79), `low` (< 0.5).
+- **`stats`:** execution metrics. Ignore during triage.
+- **Clean output:** `violations.lines` and `violations.document` are empty when no issues are detected.
 
 ## Step 1 — Parse
 
-Read the legend. Map every letter on each flagged line back to its rule ID and the rule's plain-English meaning. List each flagged line with its rule(s) spelled out.
+1. **Check for clean output:** If no lines are flagged and no document scores need attention (or `violations.lines` and `violations.document` are empty in JSON), report that the document is clean and stop.
+2. **For human-readable text:** Read the legend. Map each letter back to its rule ID and the rule's plain-English meaning. List each flagged line with its rule(s) spelled out.
+3. **For JSON:** Read `violations.lines` directly; rule IDs and line numbers are already explicit. Map each `violations.document` confidence value to its tier (`high`, `mid`, `low`).
 
 ## Step 2 — Triage (dismiss false positives first)
 
@@ -69,6 +101,7 @@ Common false positive patterns to dismiss without a fix:
 | `colon_reveal` | The colon introduces a list or definition, not drama |
 | `synonym_cycling` | The different terms mark a real distinction, not variety for style |
 | `missing_comma_subordinate` | The sentence is a list item or headline where a comma is grammatically optional |
+| `bold_lead_in_list` | The list is a genuine technical checklist, spec, API reference, or collection of distinct items where list structure aids scanning |
 
 When you dismiss a flag, state the reason in one sentence. Do not suggest a fix.
 
@@ -123,7 +156,9 @@ Low-confidence scores (↔ display) are genuine uncertainty — name both levels
 
 ## Example
 
-**Input (main.ts output):**
+### Human-readable input
+
+**Input:**
 ```
 A=banned_word, B=importance_puffery, C=empty_adverb
 
@@ -152,3 +187,27 @@ Dismissed: "just" here signals the scope of the change — it's not decorative. 
 ```
 2 flags reviewed — 1 dismissed as false positive, 1 fix applied (2 rules merged into 1 edit).
 ```
+
+### JSON input
+
+**Input:**
+```json
+{
+  "violations": {
+    "lines": [
+      {
+        "lineNum": 1,
+        "text": "Our platform empowers teams to unlock their full potential.",
+        "rules": ["banned_word", "importance_puffery"]
+      },
+      {
+        "lineNum": 5,
+        "text": "This is just a routing fix.",
+        "rules": ["empty_adverb"]
+      }
+    ]
+  }
+}
+```
+
+Produces the exact same triage, fix plan, and summary as the human-readable input above.

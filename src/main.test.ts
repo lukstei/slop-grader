@@ -24,6 +24,7 @@ describe("main CLI", () => {
 		const parsed = parseCliArgs(["-r", "no-ai-slop", "README.md"]);
 		expect(stripAbsolutePaths(parsed)).toMatchInlineSnapshot(`
 			{
+			  "debug": false,
 			  "file": "README.md",
 			  "json": false,
 			  "provider": undefined,
@@ -48,6 +49,7 @@ describe("main CLI", () => {
 		]);
 		expect(stripAbsolutePaths(parsed)).toMatchInlineSnapshot(`
 			{
+			  "debug": false,
 			  "file": "README.md",
 			  "json": true,
 			  "provider": "openrouter",
@@ -65,19 +67,32 @@ describe("main CLI", () => {
 		expect(parsed.stats).toBe(true);
 	});
 
+	it("parseCliArgs parses --debug flag and -d alias", () => {
+		const parsedLong = parseCliArgs([
+			"-r",
+			"no-ai-slop",
+			"--debug",
+			"README.md",
+		]);
+		expect(parsedLong.debug).toBe(true);
+
+		const parsedShort = parseCliArgs(["-r", "no-ai-slop", "-d", "README.md"]);
+		expect(parsedShort.debug).toBe(true);
+	});
+
 	it("parseCliArgs throws usage on missing arguments", () => {
 		expect(() => parseCliArgs([])).toThrowErrorMatchingInlineSnapshot(
-			`[Error: usage: node main.ts -r <name|path> [-r ...] [--provider <jev|openrouter>] [--json] [--stats] <file>]`,
+			`[Error: usage: node main.ts -r <name|path> [-r ...] [--provider <jev|openrouter>] [--json] [--stats] [--debug] <file>]`,
 		);
 		expect(() =>
 			parseCliArgs(["README.md"]),
 		).toThrowErrorMatchingInlineSnapshot(
-			`[Error: usage: node main.ts -r <name|path> [-r ...] [--provider <jev|openrouter>] [--json] [--stats] <file>]`,
+			`[Error: usage: node main.ts -r <name|path> [-r ...] [--provider <jev|openrouter>] [--json] [--stats] [--debug] <file>]`,
 		);
 		expect(() =>
 			parseCliArgs(["-r", "no-ai-slop"]),
 		).toThrowErrorMatchingInlineSnapshot(
-			`[Error: usage: node main.ts -r <name|path> [-r ...] [--provider <jev|openrouter>] [--json] [--stats] <file>]`,
+			`[Error: usage: node main.ts -r <name|path> [-r ...] [--provider <jev|openrouter>] [--json] [--stats] [--debug] <file>]`,
 		);
 	});
 

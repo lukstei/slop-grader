@@ -137,7 +137,7 @@
 	"synonym_cycling": {
 		"scope": "line",
 		"type": "noul",
-		"instructions": "Considering the surrounding context in `before` and `after`, does the line rotate synonyms for a term already established nearby instead of repeating the clear word?",
+		"instructions": "Considering the surrounding lines, does the line rotate synonyms for a term already established nearby instead of repeating the clear word?",
 		"criteria": {
 			"true": "The line swaps in a synonym (e.g. \"the tool\" then \"the assistant\" then \"the platform\") where repetition would be clearer.",
 			"false": "The term is consistent with surrounding lines, or the synonym adds a real distinction."
@@ -177,6 +177,15 @@
 		"criteria": {
 			"true": "An em dash is used decoratively or where simpler punctuation works.",
 			"false": "The em dash is justified and beats the alternatives in this sentence."
+		}
+	},
+	"bold_lead_in_list": {
+		"scope": "line",
+		"type": "noul",
+		"instructions": "Does the line use a bold lead-in list format (e.g. \"1. **Label:** text\" or \"- **Label:** text\") to present narrative explanations, steps, or sequential thoughts that would read better as continuous prose rather than a list?",
+		"criteria": {
+			"true": "The line is a numbered or bulleted list item with a bold label/title that forces narrative prose or sequential reasoning into an artificial list structure.",
+			"false": "The line is not a bold lead-in list item, or it belongs to a genuine reference list, technical checklist, API/spec listing, or set of distinct items where list structure clarifies the content."
 		}
 	}
 }

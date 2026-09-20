@@ -30,6 +30,7 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 	provider?: ProviderName;
 	json: boolean;
 	stats: boolean;
+	debug: boolean;
 } {
 	const { values, positionals } = parseArgs({
 		args: argv,
@@ -38,6 +39,7 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 			provider: { type: "string", short: "p" },
 			json: { type: "boolean", short: "j", default: false },
 			stats: { type: "boolean", short: "s", default: false },
+			debug: { type: "boolean", short: "d", default: false },
 		},
 		allowPositionals: true,
 	});
@@ -47,7 +49,7 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 
 	if (!rulesPaths.length || !file) {
 		throw new Error(
-			"usage: node main.ts -r <name|path> [-r ...] [--provider <jev|openrouter>] [--json] [--stats] <file>",
+			"usage: node main.ts -r <name|path> [-r ...] [--provider <jev|openrouter>] [--json] [--stats] [--debug] <file>",
 		);
 	}
 
@@ -68,6 +70,7 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 		provider,
 		json: values.json ?? false,
 		stats: values.stats ?? false,
+		debug: values.debug ?? false,
 	};
 }
 
@@ -78,14 +81,53 @@ async function main() {
 		provider: providerName,
 		json,
 		stats,
+		debug,
 	} = parseCliArgs();
 	const provider = createProvider(providerName);
 
 	let apiCalls = 0;
 	const trackingProvider: Provider = {
-		createDecision(req) {
-			apiCalls++;
-			return provider.createDecision(req);
+		async createDecision(req) {
+			const callIndex = ++apiCalls;
+			const start = performance.now();
+			try {
+				const res = await provider.createDecision(req);
+				if (debug) {
+					const durationMs =
+						Math.round((performance.now() - start) * 100) / 100;
+					console.error(
+						JSON.stringify(
+							{
+								call: callIndex,
+								durationMs,
+								request: req,
+								response: res,
+							},
+							null,
+							2,
+						),
+					);
+				}
+				return res;
+			} catch (err) {
+				if (debug) {
+					const durationMs =
+						Math.round((performance.now() - start) * 100) / 100;
+					console.error(
+						JSON.stringify(
+							{
+								call: callIndex,
+								durationMs,
+								request: req,
+								error: err instanceof Error ? err.message : String(err),
+							},
+							null,
+							2,
+						),
+					);
+				}
+				throw err;
+			}
 		},
 	};
 
