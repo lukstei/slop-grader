@@ -229,11 +229,7 @@ Rate the narrative arc of the document.
 
 #### Keep rules granular
 
-Keep each rule focused on a single pattern rather than combining multiple checks into one broad rule:
-
-- **Actionable output:** When a line is flagged, the report prints the rule ID. A granular ID (e.g. `compound_spacing` instead of a generic `spelling`) shows immediately what failed without guessing which sub-clause triggered.
-- **Evaluator accuracy:** Evaluator models score binary criteria far more reliably on single conditions. Bundling typos, word choice, and punctuation into one prompt degrades precision.
-- **Isolated tuning:** You can refine criteria or add edge-case examples to a specific rule without regressing unrelated checks.
+Test one pattern per rule. Bundling typos, word choice, and punctuation into a single check hurts model precision, hides which condition triggered in the report, and makes rules harder to tune without regressions. A specific rule ID like `compound_spacing` (instead of a generic `spelling`) shows immediately what failed.
 
 #### Inspirations for rulesets
 
