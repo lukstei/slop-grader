@@ -83,3 +83,13 @@
 - **Current State:** `buildBatchRequest` duplicates the full rule instructions and criteria into every individual line's question object, inflating request payloads with redundant schema definitions across hundreds of lines.
 - **Objective:** Pass rule definitions once within the structured `state` payload and have line questions reference them by identifier rather than repeating full criteria objects.
 - **Agent Triage:** Jev supports structured object state and backtick references in questions. Verify that referential prompts maintain classification accuracy and confidence calibration compared to inlined criteria.
+
+### [ ] 16. Dry-Run Mode for API Calls
+- **Current State:** Running the CLI immediately dispatches network requests to provider APIs (`jev` or `openrouter`). There is no way to inspect prepared request payloads or batch structures without making live calls and consuming tokens.
+- **Objective:** Add a `--dry-run` CLI flag that prints the prepared API calls and request payloads without executing them.
+- **Agent Triage:** Determine whether `--dry-run` prints full JSON request payloads or a structured summary. Ensure execution bypasses API key checks and exits cleanly with code 0.
+
+### [ ] 17. Interactive Mode for CLI Inputs
+- **Current State:** The CLI requires all inputs via flags and positional arguments (`-r`, target file). Running it with missing arguments immediately exits with a usage error string instead of guiding the user.
+- **Objective:** Add an interactive mode (via `--interactive` or when invoked without arguments in a TTY) that prompts step-by-step for required inputs such as target file, rulesets, provider, and output options.
+- **Agent Triage:** Prefer Node's native `readline/promises` to keep dependencies minimal. Check `process.stdin.isTTY` so non-interactive shells and CI pipes fail fast instead of hanging on prompts.
