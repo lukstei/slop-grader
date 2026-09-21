@@ -3,8 +3,8 @@ import { join } from "node:path";
 import type { Answers } from "@openrouter/sdk/models/decisionsresponse";
 import { describe, expect, it } from "vitest";
 import {
+	batchLines,
 	buildBatchRequest,
-	chunk,
 	extractDocumentFlags,
 	extractDocumentScores,
 	extractLineFlags,
@@ -78,26 +78,69 @@ Third line`;
 		`);
 	});
 
-	it("chunk splits array into chunks of given size", () => {
-		const items = [1, 2, 3, 4, 5, 6, 7];
-		const result = chunk(items, 3);
-		expect(result).toMatchInlineSnapshot(`
+	it("batchLines packs lines dynamically within token budget", () => {
+		const lines = [
+			{ lineNum: 1, text: "alpha" },
+			{ lineNum: 2, text: "beta" },
+			{ lineNum: 3, text: "gamma" },
+			{ lineNum: 4, text: "delta" },
+		];
+		const rule = {
+			type: "noul" as const,
+			instructions: "check",
+		};
+		// lineTokens per line is ~20 tokens; with maxTokens = 45, exactly 2 lines fit per batch
+		const batches = batchLines(lines, rule, 45);
+		expect(batches).toMatchInlineSnapshot(`
 			[
 			  [
-			    1,
-			    2,
-			    3,
+			    {
+			      "lineNum": 1,
+			      "text": "alpha",
+			    },
+			    {
+			      "lineNum": 2,
+			      "text": "beta",
+			    },
 			  ],
 			  [
-			    4,
-			    5,
-			    6,
-			  ],
-			  [
-			    7,
+			    {
+			      "lineNum": 3,
+			      "text": "gamma",
+			    },
+			    {
+			      "lineNum": 4,
+			      "text": "delta",
+			    },
 			  ],
 			]
 		`);
+	});
+
+	it("batchLines caps batches at 255 lines even under budget", () => {
+		const lines = Array.from({ length: 300 }, (_, i) => ({
+			lineNum: i + 1,
+			text: `line ${i + 1}`,
+		}));
+		const rule = {
+			type: "noul" as const,
+			instructions: "test",
+		};
+		const batches = batchLines(lines, rule, 100_000);
+		expect(batches.map((b) => b.length)).toMatchInlineSnapshot(`
+			[
+			  255,
+			  45,
+			]
+		`);
+	});
+
+	it("batchLines returns empty array for empty lines", () => {
+		const rule = {
+			type: "noul" as const,
+			instructions: "test",
+		};
+		expect(batchLines([], rule)).toMatchInlineSnapshot(`[]`);
 	});
 
 	it("splitRules separates line and document scoped rules", () => {

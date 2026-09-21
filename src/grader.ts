@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { basename, resolve } from "node:path";
 import type { Answers } from "@openrouter/sdk/models/decisionsresponse";
 import type { DecisionsScoreAnswer } from "@openrouter/sdk/models/decisionsscoreanswer";
+import { estimateTokenCount } from "tokenx";
 import { parseMarkdownRules } from "./markdown/rules.ts";
 import type { Provider } from "./provider.ts";
 import type {
@@ -20,7 +21,8 @@ export type { RuleSet, RulesetInfo, RulesetScope };
 
 const MODEL = "~typesafe/jev-latest";
 const THRESHOLD = 0.8;
-const BATCH_SIZE = 255;
+const MAX_BATCH_SIZE = 255;
+const TARGET_BATCH_TOKENS = Math.floor(64_000 * 0.8);
 
 // ── Pure / Deterministic ─────────────────────────────────────────────────────
 
@@ -31,13 +33,41 @@ export function parseLines(text: string): Line[] {
 		.filter(({ text: lineText }) => lineText.trim().length > 0);
 }
 
-export function chunk<T>(arr: T[], size: number): T[][] {
-	assert(size > 0, "chunk size must be greater than 0");
-	const out: T[][] = [];
-	for (let i = 0; i < arr.length; i += size) {
-		out.push(arr.slice(i, i + size));
+export function batchLines(
+	lines: Line[],
+	rule: NoulQuestion,
+	maxTokens = TARGET_BATCH_TOKENS,
+): Line[][] {
+	assert(maxTokens > 0, "maxTokens must be positive");
+	if (lines.length === 0) return [];
+
+	const questionTokens = estimateTokenCount(JSON.stringify(rule));
+	const batches: Line[][] = [];
+	let currentBatch: Line[] = [];
+	let currentTokens = 0;
+
+	for (const line of lines) {
+		const lineTokens = estimateTokenCount(line.text) + questionTokens + 8;
+
+		if (
+			currentBatch.length > 0 &&
+			(currentTokens + lineTokens > maxTokens ||
+				currentBatch.length >= MAX_BATCH_SIZE)
+		) {
+			batches.push(currentBatch);
+			currentBatch = [];
+			currentTokens = 0;
+		}
+
+		currentBatch.push(line);
+		currentTokens += lineTokens;
 	}
-	return out;
+
+	if (currentBatch.length > 0) {
+		batches.push(currentBatch);
+	}
+
+	return batches;
 }
 
 export function lineMarker(lineNum: number): string {
@@ -207,11 +237,11 @@ export async function gradeLines(
 	provider: Provider,
 ): Promise<FlagMap> {
 	if (!Object.keys(questions).length) return new Map();
-	const batches = chunk(lines, BATCH_SIZE);
 
 	const results = await Promise.all(
-		Object.entries(questions).flatMap(([qKey, qDef]) =>
-			batches.map(async (batch) => {
+		Object.entries(questions).flatMap(([qKey, qDef]) => {
+			const batches = batchLines(lines, qDef);
+			return batches.map(async (batch) => {
 				const { state, batchQuestions } = buildBatchRequest(batch, qDef);
 				const decision = await provider.createDecision({
 					model: MODEL,
@@ -219,8 +249,8 @@ export async function gradeLines(
 					questions: batchQuestions,
 				});
 				return { qKey, answers: decision.answers };
-			}),
-		),
+			});
+		}),
 	);
 
 	return extractLineFlags(results);
