@@ -189,17 +189,6 @@ npx @lukstei/slop-grader@latest --list-rulesets
 npx @lukstei/slop-grader@latest -l --json
 ```
 
-Displays each ruleset's scope (`line`, `document`, or `mixed`), rule count, and description:
-
-```text
-NAME             SCOPE     RULES  DESCRIPTION
-article-scores   document      8  Document-level quality scores: engagement, narrative arc, ...
-grammar-english  line         21  English grammar and style rules: spelling and confused words, ...
-grammar-german   line         13  Deutsche Grammatik-, Rechtschreib- und Zeichensetzungsregeln: ...
-no-ai-slop       line         21  Line-level rules to detect AI slop patterns: banned buzzwords, ...
-tech-docs        mixed        11  Technical documentation rules: structure, task orientation, ...
-```
-
 Pass built-in rulesets by name (`-r article-scores`):
 
 | Ruleset | What it checks |
