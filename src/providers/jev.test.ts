@@ -48,15 +48,6 @@ describe("JevProvider", () => {
 								"3": 0.1,
 							},
 						},
-						topic: {
-							type: "choice",
-							choice: "tech",
-							confidence: 0.95,
-							probabilities: {
-								tech: 0.95,
-								finance: 0.05,
-							},
-						},
 					},
 					usage: {
 						input_tokens: 120,
@@ -93,14 +84,6 @@ describe("JevProvider", () => {
 					instructions: "Rate the quality",
 					criteria: ["Poor", "Fair", "Good", "Excellent"],
 				},
-				topic: {
-					type: "choice",
-					instructions: "Select the topic",
-					criteria: {
-						tech: "Technology and software",
-						finance: "Money and markets",
-					},
-				},
 			},
 		});
 
@@ -125,14 +108,6 @@ describe("JevProvider", () => {
 			      ],
 			      "instructions": "Rate the quality",
 			      "type": "score",
-			    },
-			    "topic": {
-			      "criteria": {
-			        "finance": "Money and markets",
-			        "tech": "Technology and software",
-			      },
-			      "instructions": "Select the topic",
-			      "type": "choice",
 			    },
 			  },
 			  "state": "This is a transformative cutting-edge paradigm shift.",
@@ -162,15 +137,6 @@ describe("JevProvider", () => {
 			      },
 			      "score": 2.5,
 			      "type": "score",
-			    },
-			    "topic": {
-			      "choice": "tech",
-			      "confidence": 0.95,
-			      "probabilities": {
-			        "finance": 0.05,
-			        "tech": 0.95,
-			      },
-			      "type": "choice",
 			    },
 			  },
 			}

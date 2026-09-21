@@ -3,8 +3,12 @@ import type { DecisionsScoreAnswer } from "@openrouter/sdk/models/decisionsscore
 import { lineMarker } from "./grader.ts";
 import type { FlagMap, Line, NoulQuestion, Question, Stats } from "./types.ts";
 
-export const CONF_HIGH = 0.8;
-export const CONF_MID = 0.5;
+const CONF_HIGH = 0.8;
+const CONF_MID = 0.5;
+
+export function isScoreViolation(score: number, max: number): boolean {
+	return max > 0 ? score < max * (2 / 3) : false;
+}
 
 export function indexToRuleKey(index: number): string {
 	assert(index >= 0, "Rule index must be non-negative");
@@ -56,18 +60,36 @@ export function formatLineReport(
 	return out;
 }
 
+export function formatDocumentViolations(
+	docFlags: string[],
+	questions: Record<string, Question>,
+): string[] {
+	if (!docFlags.length) return [];
+	const out: string[] = [];
+	out.push("\n## Document Violations\n");
+	for (const key of docFlags) {
+		const q = questions[key];
+		const summary = q ? ` — ${q.instructions}` : "";
+		out.push(`* ${key}${summary}`);
+	}
+	return out;
+}
+
 export function formatDocumentScores(
 	scores: Record<string, DecisionsScoreAnswer>,
 	questions: Record<string, Question>,
 ): string[] {
-	if (!Object.keys(scores).length) return [];
+	const scoreEntries = Object.entries(scores).filter(
+		([k]) => questions[k]?.type === "score",
+	);
+	if (!scoreEntries.length) return [];
 
 	const out: string[] = [];
 	out.push("\n## Document Scores\n");
 
-	const nameWidth = Math.max(...Object.keys(scores).map((k) => k.length));
+	const nameWidth = Math.max(...scoreEntries.map(([k]) => k.length));
 
-	for (const [key, answer] of Object.entries(scores)) {
+	for (const [key, answer] of scoreEntries) {
 		const q = questions[key];
 		if (q?.type !== "score") continue;
 		const { criteria } = q;
@@ -119,6 +141,7 @@ export function formatJson(
 	flags: FlagMap,
 	scores: Record<string, DecisionsScoreAnswer>,
 	docQuestions: Record<string, Question>,
+	docFlags: string[] = [],
 	stats?: Stats,
 ): string {
 	const flaggedLines = lines
@@ -131,14 +154,22 @@ export function formatJson(
 
 	const document: Record<
 		string,
-		{ score: number; max: number; confidence: number; label: string }
+		| { score: number; max: number; confidence: number; label: string }
+		| { type: "noul"; rule: string }
 	> = {};
+
+	for (const rule of docFlags) {
+		document[rule] = { type: "noul", rule };
+	}
+
 	for (const [key, answer] of Object.entries(scores)) {
 		const q = docQuestions[key];
 		const criteria = q?.criteria as string[] | undefined;
-		if (!criteria) continue;
+		if (!criteria || !Array.isArray(criteria)) continue;
 		const max = criteria.length - 1;
 		const { score, confidence = 0 } = answer;
+		if (!isScoreViolation(score, max)) continue;
+
 		const tier = confidenceTier(confidence);
 		const frac = score % 1;
 		const isBetween = frac > 0.2 && frac < 0.8;

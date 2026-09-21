@@ -95,6 +95,38 @@ class MarkdownParser {
 				break;
 			}
 
+			const isFencedCode =
+				!inlinesOnly && end === "" && this.atLineStart() && this.matches("```");
+			if (isFencedCode) {
+				flushParagraph(this.index);
+
+				const codeStartIndex = this.index;
+				this.readLineRest();
+
+				const contentStartIndex = this.index;
+				let contentEndIndex = this.index;
+				while (!this.done) {
+					if (this.atLineStart() && this.matches("```")) {
+						this.readLineRest();
+						break;
+					}
+					this.readLineRest();
+					contentEndIndex = this.index;
+				}
+
+				root.children.push({
+					type: "code",
+					content: this.getSlice(contentStartIndex, contentEndIndex),
+					source: this.getSlice(codeStartIndex, this.index),
+				});
+				lastBlockIndex = root.children.length;
+
+				paragraphStartIndex = this.index;
+				textStartIndex = this.index;
+
+				continue;
+			}
+
 			const headingMatch =
 				!inlinesOnly && end === "" && this.atLineStart()
 					? this.matchHeadingPrefix()

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
 	buildBatchRequest,
 	chunk,
+	extractDocumentFlags,
 	extractDocumentScores,
 	extractLineFlags,
 	gradeDocument,
@@ -35,6 +36,27 @@ Third line`;
 			  },
 			  {
 			    "lineNum": 5,
+			    "text": "Third line",
+			  },
+			]
+		`);
+	});
+
+	it("parseLines handles CRLF Windows newlines without retaining carriage returns", () => {
+		const input = "First line\r\n\r\nSecond line\r\nThird line";
+		const result = parseLines(input);
+		expect(result).toMatchInlineSnapshot(`
+			[
+			  {
+			    "lineNum": 1,
+			    "text": "First line",
+			  },
+			  {
+			    "lineNum": 3,
+			    "text": "Second line",
+			  },
+			  {
+			    "lineNum": 4,
 			    "text": "Third line",
 			  },
 			]
@@ -130,6 +152,26 @@ Third line`;
 		);
 	});
 
+	it("splitRules throws when duplicate rule IDs exist across rulesets", () => {
+		const ruleA: Record<string, Rule> = {
+			same_rule: {
+				scope: "line",
+				type: "noul",
+				instructions: "First",
+			},
+		};
+		const ruleB: Record<string, Rule> = {
+			same_rule: {
+				scope: "document",
+				type: "noul",
+				instructions: "Second",
+			},
+		};
+		expect(() => splitRules([ruleA, ruleB])).toThrowErrorMatchingInlineSnapshot(
+			`[AssertionError: Duplicate rule "same_rule": rule identifiers must be unique across rulesets]`,
+		);
+	});
+
 	it("buildBatchRequest generates formatted state and question prompts", () => {
 		const lines = [
 			{ lineNum: 1, text: "Hello world" },
@@ -219,6 +261,15 @@ Third line`;
 		`);
 	});
 
+	it("extractDocumentFlags extracts answers exceeding threshold", () => {
+		const answers = {
+			has_summary: { type: "noul" as const, noul: 0.95 },
+			clean: { type: "noul" as const, noul: 0.2 },
+			ignored: { type: "score" as const, score: 2 },
+		};
+		expect(extractDocumentFlags(answers, 0.8)).toEqual(["has_summary"]);
+	});
+
 	it("gradeLines and gradeDocument with mock provider", async () => {
 		const mockProvider: Provider = {
 			async createDecision(req) {
@@ -262,14 +313,53 @@ Third line`;
 				criteria: ["Low", "Mid", "High"],
 			},
 		};
-		const scores = await gradeDocument("Sample text", docRules, mockProvider);
-		expect(scores).toMatchInlineSnapshot(`
+		const docResult = await gradeDocument(
+			"Sample text",
+			docRules,
+			mockProvider,
+		);
+		expect(docResult).toMatchInlineSnapshot(`
 			{
-			  "engagement": {
-			    "confidence": 0.85,
-			    "score": 2.8,
-			    "type": "score",
+			  "flags": [],
+			  "scores": {
+			    "engagement": {
+			      "confidence": 0.85,
+			      "score": 2.8,
+			      "type": "score",
+			    },
 			  },
+			}
+		`);
+	});
+
+	it("gradeDocument extracts document noul flags exceeding threshold", async () => {
+		const mockProvider: Provider = {
+			async createDecision() {
+				return {
+					answers: {
+						has_exec_summary: { type: "noul", noul: 0.95 },
+						clean_doc: { type: "noul", noul: 0.3 },
+					},
+				};
+			},
+		};
+		const docRules = {
+			has_exec_summary: {
+				type: "noul" as const,
+				instructions: "Check summary",
+			},
+			clean_doc: {
+				type: "noul" as const,
+				instructions: "Check clean",
+			},
+		};
+		const result = await gradeDocument("Sample text", docRules, mockProvider);
+		expect(result).toMatchInlineSnapshot(`
+			{
+			  "flags": [
+			    "has_exec_summary",
+			  ],
+			  "scores": {},
 			}
 		`);
 	});

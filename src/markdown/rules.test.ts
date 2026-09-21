@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extractKeyword, parseMarkdownRules } from "./rules.ts";
+import { parseMarkdownRules } from "./rules.ts";
 
 describe("parseMarkdownRules", () => {
 	it("parses line rules under # Line Rules", () => {
@@ -473,29 +473,47 @@ Does the line contain a filler phrase?
 				`[AssertionError: Invalid heading "### Criterias": only "### Criteria" is allowed under a rule]`,
 			);
 		});
-	});
-});
 
-describe("extractKeyword", () => {
-	it("extracts single-line and multiline keyword values with stop words", () => {
-		const criteria = `- **true**: A positive condition met.
-  Additional context line.
-- **false**: Negative condition.`;
-		const result = {
-			true: extractKeyword(criteria, "true", "false"),
-			false: extractKeyword(criteria, "false", "true"),
-		};
-		expect(result).toMatchInlineSnapshot(`
-			{
-			  "false": "Negative condition.",
-			  "true": "A positive condition met.
-			  Additional context line.",
-			}
-		`);
+		it("throws when duplicate rule ID is defined within the same file", () => {
+			const md = `# Line Rules
+
+## duplicate_rule
+First definition.
+
+### Criteria
+- **true**: yes
+- **false**: no
+
+## duplicate_rule
+Second definition.
+
+### Criteria
+- **true**: yes
+- **false**: no
+`;
+			expect(() => parseMarkdownRules(md)).toThrowErrorMatchingInlineSnapshot(
+				`[AssertionError: Duplicate rule "duplicate_rule": rule identifiers must be unique]`,
+			);
+		});
 	});
 
-	it("returns null when keyword is not found", () => {
-		const criteria = "- item: Some text";
-		expect(extractKeyword(criteria, "true")).toMatchInlineSnapshot(`null`);
+	it("parses rules containing fenced code blocks with # comments without error", () => {
+		const md = `# Line Rules
+
+## code_rule
+Check the following snippet:
+
+\`\`\`bash
+# Not a heading comment
+echo "hello"
+\`\`\`
+
+### Criteria
+- **true**: yes
+- **false**: no
+`;
+		const result = parseMarkdownRules(md);
+		expect(result.code_rule).toBeDefined();
+		expect(result.code_rule?.instructions).toContain("# Not a heading comment");
 	});
 });

@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import { realpathSync } from "node:fs";
 import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
-import { gradeDocument, gradeLines, loadLines, loadRules } from "./grader.ts";
+import { gradeDocument, gradeLines, loadRules, parseLines } from "./grader.ts";
 import {
 	createProvider,
 	type Provider,
@@ -11,18 +12,20 @@ import {
 } from "./provider.ts";
 import {
 	formatDocumentScores,
+	formatDocumentViolations,
 	formatJson,
 	formatLineReport,
 	formatStats,
+	isScoreViolation,
 } from "./report.ts";
 
-const RULES_DIR = new URL("../rules/", import.meta.url).pathname;
+const RULES_DIR = fileURLToPath(new URL("../rules/", import.meta.url));
 
 export function resolveRulePath(r: string): string {
 	if (!r.includes("/") && !r.includes("\\") && !r.includes(".")) {
-		return `${RULES_DIR}${r}.md`;
+		return resolve(RULES_DIR, `${r}.md`);
 	}
-	return new URL(r, `file://${process.cwd()}/`).pathname;
+	return resolve(r);
 }
 
 export function parseCliArgs(argv = process.argv.slice(2)): {
@@ -34,6 +37,8 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 	json: boolean;
 	stats: boolean;
 	debug: boolean;
+	help: boolean;
+	version: boolean;
 } {
 	const { values, positionals } = parseArgs({
 		args: argv,
@@ -45,9 +50,25 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 			json: { type: "boolean", short: "j", default: false },
 			stats: { type: "boolean", short: "s", default: false },
 			debug: { type: "boolean", short: "d", default: false },
+			help: { type: "boolean", short: "h", default: false },
+			version: { type: "boolean", short: "v", default: false },
 		},
 		allowPositionals: true,
 	});
+
+	const help = values.help ?? false;
+	const version = values.version ?? false;
+	if (help || version) {
+		return {
+			check: false,
+			rulesPaths: [],
+			json: false,
+			stats: false,
+			debug: false,
+			help,
+			version,
+		};
+	}
 
 	const check = values.check ?? false;
 	const ruleInputs = [...(values.rules ?? []), ...(check ? positionals : [])];
@@ -56,7 +77,7 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 
 	if (!rulesPaths.length || (!check && !file)) {
 		throw new Error(
-			"usage: node main.ts [-c|--check] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [file]",
+			"usage: node main.ts [-c|--check] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [-h|--help] [-v|--version] [file]",
 		);
 	}
 
@@ -80,8 +101,13 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 		json: values.json ?? false,
 		stats: values.stats ?? false,
 		debug: values.debug ?? false,
+		help: false,
+		version: false,
 	};
 }
+
+const USAGE =
+	"usage: slop-grader [-c|--check] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [-h|--help] [-v|--version] [file]";
 
 async function main() {
 	const {
@@ -93,7 +119,23 @@ async function main() {
 		json,
 		stats,
 		debug,
+		help,
+		version,
 	} = parseCliArgs();
+
+	if (help) {
+		console.log(USAGE);
+		return;
+	}
+
+	if (version) {
+		const pkgPath = fileURLToPath(new URL("../package.json", import.meta.url));
+		const pkg = JSON.parse(await readFile(pkgPath, "utf8")) as {
+			version: string;
+		};
+		console.log(pkg.version);
+		return;
+	}
 
 	if (check) {
 		await loadRules(rulesPaths);
@@ -150,19 +192,20 @@ async function main() {
 		},
 	};
 
-	const skillPath = new URL("../SKILL.md", import.meta.url).pathname;
-	const filePath = new URL(file, `file://${process.cwd()}/`).pathname;
+	const skillPath = fileURLToPath(new URL("../SKILL.md", import.meta.url));
+	const filePath = resolve(file);
 
-	const [{ lineRules, docRules }, lines, fullText] = await Promise.all([
+	const [{ lineRules, docRules }, fullText] = await Promise.all([
 		loadRules(rulesPaths),
-		loadLines(file),
 		readFile(file, "utf8"),
 	]);
+	const lines = parseLines(fullText);
 
-	const [flags, scores] = await Promise.all([
+	const [flags, docResult] = await Promise.all([
 		gradeLines(lines, lineRules, trackingProvider),
 		gradeDocument(fullText, docRules, trackingProvider),
 	]);
+	const { scores, flags: docFlags } = docResult;
 
 	const lineRulesCount = Object.keys(lineRules).length;
 	const docRulesCount = Object.keys(docRules).length;
@@ -177,7 +220,15 @@ async function main() {
 			}
 		: undefined;
 
-	const hasViolations = flags.size > 0 || Object.keys(scores).length > 0;
+	const hasScoreViolation = Object.entries(scores).some(([key, answer]) => {
+		const q = docRules[key];
+		const criteria = q?.criteria as string[] | undefined;
+		if (!criteria || !Array.isArray(criteria)) return false;
+		const max = criteria.length - 1;
+		return isScoreViolation(answer.score, max);
+	});
+	const hasViolations =
+		flags.size > 0 || docFlags.length > 0 || hasScoreViolation;
 
 	if (json) {
 		console.log(
@@ -188,6 +239,7 @@ async function main() {
 				flags,
 				scores,
 				docRules,
+				docFlags,
 				statsData,
 			),
 		);
@@ -196,6 +248,10 @@ async function main() {
 
 	if (!hasViolations) {
 		console.log("No rules violated.");
+		const docScores = formatDocumentScores(scores, docRules);
+		for (const line of docScores) {
+			console.log(line);
+		}
 		if (statsData) {
 			for (const line of formatStats(statsData)) {
 				console.log(line);
@@ -213,6 +269,11 @@ async function main() {
 
 	const lineReport = formatLineReport(lines, flags, lineRules);
 	for (const line of lineReport) {
+		console.log(line);
+	}
+
+	const docViolations = formatDocumentViolations(docFlags, docRules);
+	for (const line of docViolations) {
 		console.log(line);
 	}
 

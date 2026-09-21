@@ -22,20 +22,6 @@ function parseScopeHeader(text: string): "line" | "document" | null {
 	return null;
 }
 
-export function extractKeyword(
-	text: string,
-	keyword: string,
-	stopKeyword?: string,
-): string | null {
-	const stop = stopKeyword ? `(?:${stopKeyword}|\\n)` : "\\n";
-	const regex = new RegExp(
-		`(?:^|\\n)[-*]\\s+(?:\\*\\*)?${keyword}(?:\\*\\*)?:\\s*([^\\n]+(?:\\n(?![*-\\s]*${stop})[^\\n]+)*)`,
-		"i",
-	);
-	const match = text.match(regex);
-	return match?.[1]?.trim() ?? null;
-}
-
 export function parseMarkdownRules(
 	content: string,
 	filePath?: string,
@@ -113,6 +99,10 @@ export function parseMarkdownRules(
 				assert(
 					ruleId.length > 0,
 					`Rule heading${fileContext} cannot have an empty name`,
+				);
+				assert(
+					!ruleSections.some((s) => s.ruleId === ruleId),
+					`Duplicate rule "${ruleId}"${fileContext}: rule identifiers must be unique`,
 				);
 				currentRule = {
 					ruleId,

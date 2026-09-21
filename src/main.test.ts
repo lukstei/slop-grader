@@ -20,6 +20,15 @@ describe("main CLI", () => {
 		expect(result).toMatch(/custom\/rule\.json$/);
 	});
 
+	it("resolveRulePath preserves spaces and hash characters", () => {
+		const spacePath = resolveRulePath("./my rules/rule.md");
+		expect(spacePath).not.toContain("%20");
+		expect(spacePath).toContain("my rules/rule.md");
+
+		const hashPath = resolveRulePath("./c#_rules.md");
+		expect(hashPath).toContain("c#_rules.md");
+	});
+
 	it("parseCliArgs parses valid arguments with defaults", () => {
 		const parsed = parseCliArgs(["-r", "no-ai-slop", "README.md"]);
 		expect(stripAbsolutePaths(parsed)).toMatchInlineSnapshot(`
@@ -27,6 +36,7 @@ describe("main CLI", () => {
 			  "check": false,
 			  "debug": false,
 			  "file": "README.md",
+			  "help": false,
 			  "json": false,
 			  "model": undefined,
 			  "provider": undefined,
@@ -34,6 +44,7 @@ describe("main CLI", () => {
 			    "rules/no-ai-slop.md",
 			  ],
 			  "stats": false,
+			  "version": false,
 			}
 		`);
 	});
@@ -54,6 +65,7 @@ describe("main CLI", () => {
 			  "check": false,
 			  "debug": false,
 			  "file": "README.md",
+			  "help": false,
 			  "json": true,
 			  "model": undefined,
 			  "provider": "openrouter",
@@ -62,6 +74,7 @@ describe("main CLI", () => {
 			    "rules/tech-docs.md",
 			  ],
 			  "stats": false,
+			  "version": false,
 			}
 		`);
 	});
@@ -73,6 +86,7 @@ describe("main CLI", () => {
 			  "check": true,
 			  "debug": false,
 			  "file": undefined,
+			  "help": false,
 			  "json": false,
 			  "model": undefined,
 			  "provider": undefined,
@@ -80,6 +94,7 @@ describe("main CLI", () => {
 			    "rules/no-ai-slop.md",
 			  ],
 			  "stats": false,
+			  "version": false,
 			}
 		`);
 
@@ -92,6 +107,7 @@ describe("main CLI", () => {
 			  "check": true,
 			  "debug": false,
 			  "file": "rules/no-ai-slop.md",
+			  "help": false,
 			  "json": false,
 			  "model": undefined,
 			  "provider": undefined,
@@ -99,6 +115,7 @@ describe("main CLI", () => {
 			    "rules/no-ai-slop.md",
 			  ],
 			  "stats": false,
+			  "version": false,
 			}
 		`);
 	});
@@ -141,22 +158,32 @@ describe("main CLI", () => {
 		expect(parsedShort.debug).toBe(true);
 	});
 
+	it("parseCliArgs parses --help and -h flags", () => {
+		expect(parseCliArgs(["--help"]).help).toBe(true);
+		expect(parseCliArgs(["-h"]).help).toBe(true);
+	});
+
+	it("parseCliArgs parses --version and -v flags", () => {
+		expect(parseCliArgs(["--version"]).version).toBe(true);
+		expect(parseCliArgs(["-v"]).version).toBe(true);
+	});
+
 	it("parseCliArgs throws usage on missing arguments", () => {
 		expect(() => parseCliArgs([])).toThrowErrorMatchingInlineSnapshot(
-			`[Error: usage: node main.ts [-c|--check] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [file]]`,
+			`[Error: usage: node main.ts [-c|--check] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [-h|--help] [-v|--version] [file]]`,
 		);
 		expect(() =>
 			parseCliArgs(["README.md"]),
 		).toThrowErrorMatchingInlineSnapshot(
-			`[Error: usage: node main.ts [-c|--check] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [file]]`,
+			`[Error: usage: node main.ts [-c|--check] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [-h|--help] [-v|--version] [file]]`,
 		);
 		expect(() =>
 			parseCliArgs(["-r", "no-ai-slop"]),
 		).toThrowErrorMatchingInlineSnapshot(
-			`[Error: usage: node main.ts [-c|--check] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [file]]`,
+			`[Error: usage: node main.ts [-c|--check] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [-h|--help] [-v|--version] [file]]`,
 		);
 		expect(() => parseCliArgs(["--check"])).toThrowErrorMatchingInlineSnapshot(
-			`[Error: usage: node main.ts [-c|--check] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [file]]`,
+			`[Error: usage: node main.ts [-c|--check] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [-h|--help] [-v|--version] [file]]`,
 		);
 	});
 

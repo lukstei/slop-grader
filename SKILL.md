@@ -73,7 +73,7 @@ API calls:        6
 ```
 
 - **`violations.lines`:** list of flagged lines with 1-indexed `lineNum`, original `text`, and array of `rules`.
-- **`violations.document`:** document-level scores. Map numerical `confidence` to tiers: `high` (≥ 0.8), `mid` (0.5–0.79), `low` (< 0.5).
+- **`violations.document`:** document-level quality scores and boolean rule violations. Map numerical `confidence` to tiers: `high` (≥ 0.8), `mid` (0.5–0.79), `low` (< 0.5).
 - **`stats`:** execution metrics. Ignore during triage.
 - **Clean output:** `violations.lines` and `violations.document` are empty when no issues are detected.
 

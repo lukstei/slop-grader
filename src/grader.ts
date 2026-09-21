@@ -14,18 +14,17 @@ import type {
 } from "./types.ts";
 
 export type { RuleSet };
-export { parseMarkdownRules };
 
-export const MODEL = "~typesafe/jev-latest";
-export const THRESHOLD = 0.8;
-export const BATCH_SIZE = 255;
+const MODEL = "~typesafe/jev-latest";
+const THRESHOLD = 0.8;
+const BATCH_SIZE = 255;
 
 // ── Pure / Deterministic ─────────────────────────────────────────────────────
 
 export function parseLines(text: string): Line[] {
 	return text
-		.split("\n")
-		.map((line, i) => ({ lineNum: i + 1, text: line }))
+		.split(/\r?\n/)
+		.map((line, i) => ({ lineNum: i + 1, text: line.replace(/\r$/, "") }))
 		.filter(({ text: lineText }) => lineText.trim().length > 0);
 }
 
@@ -43,21 +42,26 @@ export function lineMarker(lineNum: number): string {
 }
 
 export function splitRules(raw: Record<string, Rule>[]): RuleSet {
-	const merged = Object.assign({}, ...raw) as Record<string, Rule>;
 	const lineRules: Record<string, NoulQuestion> = {};
 	const docRules: Record<string, Question> = {};
 
-	for (const [key, rule] of Object.entries(merged)) {
-		assert(
-			rule.scope === "line" || rule.scope === "document",
-			`Rule "${key}" is missing a valid "scope" field ("line" or "document")`,
-		);
-		if (rule.scope === "line") {
-			const { scope: _, ...rest } = rule;
-			lineRules[key] = rest;
-		} else {
-			const { scope: _, ...rest } = rule;
-			docRules[key] = rest;
+	for (const ruleMap of raw) {
+		for (const [key, rule] of Object.entries(ruleMap)) {
+			assert(
+				!(key in lineRules) && !(key in docRules),
+				`Duplicate rule "${key}": rule identifiers must be unique across rulesets`,
+			);
+			assert(
+				rule.scope === "line" || rule.scope === "document",
+				`Rule "${key}" is missing a valid "scope" field ("line" or "document")`,
+			);
+			if (rule.scope === "line") {
+				const { scope: _, ...rest } = rule;
+				lineRules[key] = rest;
+			} else {
+				const { scope: _, ...rest } = rule;
+				docRules[key] = rest;
+			}
 		}
 	}
 
@@ -115,6 +119,19 @@ export function extractDocumentScores(
 	return scores;
 }
 
+export function extractDocumentFlags(
+	answers: Record<string, Answers>,
+	threshold = THRESHOLD,
+): string[] {
+	const flags: string[] = [];
+	for (const [key, answer] of Object.entries(answers)) {
+		if (answer.type === "noul" && answer.noul > threshold) {
+			flags.push(key);
+		}
+	}
+	return flags;
+}
+
 // ── Side Effects (I/O & Providers) ───────────────────────────────────────────
 
 export async function loadRules(paths: string[]): Promise<RuleSet> {
@@ -128,11 +145,6 @@ export async function loadRules(paths: string[]): Promise<RuleSet> {
 		}),
 	);
 	return splitRules(raw);
-}
-
-export async function loadLines(filePath: string): Promise<Line[]> {
-	const content = await readFile(filePath, "utf8");
-	return parseLines(content);
 }
 
 export async function gradeLines(
@@ -164,12 +176,18 @@ export async function gradeDocument(
 	text: string,
 	questions: Record<string, Question>,
 	provider: Provider,
-): Promise<Record<string, DecisionsScoreAnswer>> {
-	if (!Object.keys(questions).length) return {};
+): Promise<{
+	scores: Record<string, DecisionsScoreAnswer>;
+	flags: string[];
+}> {
+	if (!Object.keys(questions).length) return { scores: {}, flags: [] };
 	const decision = await provider.createDecision({
 		model: MODEL,
 		state: text,
 		questions,
 	});
-	return extractDocumentScores(decision.answers);
+	return {
+		scores: extractDocumentScores(decision.answers),
+		flags: extractDocumentFlags(decision.answers),
+	};
 }

@@ -22,7 +22,7 @@ Run `slop-grader` on a document like [`examples/slop.md`](examples/slop.md):
 npx @lukstei/slop-grader@latest -r no-ai-slop examples/slop.md
 ```
 
-<img src="assets/terminal.png" alt="Terminal output" width="450" />
+<img src="assets/terminal.png" alt="Terminal output" width="550" />
 
 ### 2. Fix with an AI agent
 
@@ -62,7 +62,7 @@ npx @lukstei/slop-grader@latest -r no-ai-slop -r article-scores my-draft.md
 
 ### Built-in rulesets
 
-Pass built-in rulesets by name:
+Pass built-in rulesets by name (`-r article-scores`):
 
 | Ruleset | What it checks |
 |---|---|
@@ -76,7 +76,7 @@ Pass built-in rulesets by name:
 
 Define custom rules in Markdown (`-r ./my-rules.md`), organized under `# Line Rules` and `# Document Rules` sections.
 
-You can be creative and ask any plain-text question about a single line or the whole document. Rules work on any text format—prose, git diffs, server logs, legal contracts, or structured text like CSV files:
+You can be creative and ask any plain-text question about a single line or the whole document. Rules work on any text, git diffs, server logs, legal contracts, or structured text like CSV files:
 
 ```markdown
 # Line Rules
@@ -231,8 +231,8 @@ Does this commit message or PR description explain the motivation and problem co
 - Explains the failure trigger, bug condition, and rationale clearly
 - Details root cause, design tradeoffs considered, and verification evidence
 ```
-
 </details>
+
 
 See [`docs/SYNTAX.md`](docs/SYNTAX.md) for the complete Markdown rule syntax specification and validation reference.
 
@@ -249,7 +249,7 @@ Custom JSON rulesets (`-r ./my-rules.json`) are also supported.
 ## CLI Reference
 
 ```sh
-npx @lukstei/slop-grader@latest [-c|--check] -r <ruleset> [-r <ruleset> ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [file]
+npx @lukstei/slop-grader@latest [-c|--check] -r <ruleset> [-r <ruleset> ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [-h|--help] [-v|--version] [file]
 ```
 
 ### Flags
@@ -263,6 +263,8 @@ npx @lukstei/slop-grader@latest [-c|--check] -r <ruleset> [-r <ruleset> ...] [--
 | `--json` | `-j` | Emit structured JSON instead of the human-readable report. |
 | `--stats` | `-s` | Print execution statistics (rules applied, lines evaluated, questions asked, API calls). |
 | `--debug` | `-d` | Log all API calls (timing, request, response) as JSON to stderr. |
+| `--help` | `-h` | Display usage information. |
+| `--version` | `-v` | Display version number. |
 
 ### Providers and environment variables
 

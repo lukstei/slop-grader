@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
 	confidenceTier,
 	formatDocumentScores,
+	formatDocumentViolations,
 	formatJson,
 	formatLineReport,
 	formatStats,
 	indexToRuleKey,
+	isScoreViolation,
 } from "./report.ts";
 import type { FlagMap, Line } from "./types.ts";
 
@@ -237,7 +239,35 @@ describe("report", () => {
 		`);
 	});
 
-	it("formatJson produces structured JSON output", () => {
+	it("isScoreViolation correctly determines whether score is below passing threshold", () => {
+		expect(isScoreViolation(0.5, 2)).toBe(true);
+		expect(isScoreViolation(1.0, 2)).toBe(true);
+		expect(isScoreViolation(2.0, 2)).toBe(false);
+		expect(isScoreViolation(1.8, 3)).toBe(true);
+		expect(isScoreViolation(2.0, 3)).toBe(false);
+		expect(isScoreViolation(3.0, 3)).toBe(false);
+	});
+
+	it("formatDocumentViolations formats document boolean violations", () => {
+		const docFlags = ["executive_summary_present"];
+		const questions = {
+			executive_summary_present: {
+				type: "noul" as const,
+				instructions: "Check if summary is present",
+			},
+		};
+		const out = formatDocumentViolations(docFlags, questions);
+		expect(out).toMatchInlineSnapshot(`
+			[
+			  "
+			## Document Violations
+			",
+			  "* executive_summary_present — Check if summary is present",
+			]
+		`);
+	});
+
+	it("formatJson produces structured JSON output with document violations", () => {
 		const lines: Line[] = [
 			{ lineNum: 1, text: "Empowering our users" },
 			{ lineNum: 2, text: "Clean line" },
@@ -246,8 +276,69 @@ describe("report", () => {
 		const scores = {
 			engagement: {
 				type: "score" as const,
-				score: 2.0,
+				score: 0.5,
 				confidence: 0.85,
+			},
+		};
+		const docQuestions = {
+			engagement: {
+				type: "score" as const,
+				instructions: "Rate engagement",
+				criteria: ["Low", "Mid", "High"],
+			},
+		};
+		const docFlags = ["has_exec_summary"];
+
+		const jsonStr = formatJson(
+			"/path/to/file.txt",
+			["/path/to/rules.json"],
+			lines,
+			flags,
+			scores,
+			docQuestions,
+			docFlags,
+		);
+		expect(JSON.parse(jsonStr)).toMatchInlineSnapshot(`
+			{
+			  "file": "/path/to/file.txt",
+			  "rules": [
+			    "/path/to/rules.json",
+			  ],
+			  "violations": {
+			    "document": {
+			      "engagement": {
+			        "confidence": 0.85,
+			        "label": "Mid",
+			        "max": 2,
+			        "score": 0.5,
+			      },
+			      "has_exec_summary": {
+			        "rule": "has_exec_summary",
+			        "type": "noul",
+			      },
+			    },
+			    "lines": [
+			      {
+			        "lineNum": 1,
+			        "rules": [
+			          "banned_word",
+			        ],
+			        "text": "Empowering our users",
+			      },
+			    ],
+			  },
+			}
+		`);
+	});
+
+	it("formatJson produces empty violations when document scores are passing and clean", () => {
+		const lines: Line[] = [{ lineNum: 1, text: "Clean line" }];
+		const flags: FlagMap = new Map();
+		const scores = {
+			engagement: {
+				type: "score" as const,
+				score: 2.0,
+				confidence: 0.9,
 			},
 		};
 		const docQuestions = {
@@ -265,6 +356,7 @@ describe("report", () => {
 			flags,
 			scores,
 			docQuestions,
+			[],
 		);
 		expect(JSON.parse(jsonStr)).toMatchInlineSnapshot(`
 			{
@@ -273,23 +365,8 @@ describe("report", () => {
 			    "/path/to/rules.json",
 			  ],
 			  "violations": {
-			    "document": {
-			      "engagement": {
-			        "confidence": 0.85,
-			        "label": "High",
-			        "max": 2,
-			        "score": 2,
-			      },
-			    },
-			    "lines": [
-			      {
-			        "lineNum": 1,
-			        "rules": [
-			          "banned_word",
-			        ],
-			        "text": "Empowering our users",
-			      },
-			    ],
+			    "document": {},
+			    "lines": [],
 			  },
 			}
 		`);
@@ -360,6 +437,7 @@ describe("report", () => {
 			flags,
 			scores,
 			docQuestions,
+			[],
 			stats,
 		);
 		expect(JSON.parse(jsonStr)).toMatchInlineSnapshot(`

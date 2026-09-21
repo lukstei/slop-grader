@@ -6,7 +6,7 @@ import type {
 import type { Answers } from "@openrouter/sdk/models/decisionsresponse";
 import type { DecisionsScoreAnswer } from "@openrouter/sdk/models/decisionsscoreanswer";
 import type { ScoreCriteria, Questions as TSQuestions } from "@typesafe-ai/sdk";
-import { choice, noul, score, TypeSafeClient } from "@typesafe-ai/sdk";
+import { noul, score, TypeSafeClient } from "@typesafe-ai/sdk";
 import type { Provider } from "../provider.ts";
 
 const DEFAULT_MODEL = "jev-latest";
@@ -62,14 +62,6 @@ export class JevProvider implements Provider {
 					};
 					break;
 				}
-				case "choice":
-					answers[id] = {
-						type: "choice",
-						choice: answer.choice,
-						confidence: answer.confidence,
-						probabilities: answer.probabilities,
-					};
-					break;
 			}
 		}
 
@@ -98,8 +90,9 @@ function toTSQuestion(q: ORQuestion): TSQuestions[string] {
 				...rest,
 			] as ScoreCriteria);
 		}
-		case "choice": {
-			return choice(q.instructions ?? undefined, q.criteria);
-		}
+		default:
+			throw new Error(
+				`Unsupported question type: ${(q as { type: string }).type}`,
+			);
 	}
 }
