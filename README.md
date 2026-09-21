@@ -21,7 +21,6 @@ Runs every rule against every line in parallel. No skimming, no missed lines.
 - [Development](#development)
 - [Changelog](#changelog)
 - [Contributing](#contributing)
-- [License](#license)
 
 ## How it works
 
@@ -42,17 +41,16 @@ npx @lukstei/slop-grader@latest -r no-ai-slop examples/slop.md
 Pass the output to your AI agent:
 
 - The agent distinguishes real violations from false positives and generates concrete replacements ([Example with Gemini 3.8 Flash](examples/plan.md)):
-  ```markdown
-  ### Line 1 — `banned_word`
-  - **Original:** `# 🚀 The Ultimate Paradigm Shift in Modern Data Architecture`
-  - **Fix:** `# Modern Data Architecture`
-  - **Reason:** Removes the banned phrase "paradigm shift" and decorative emoji.
+  >  ### Line 1 — `banned_word`
+  >  - **Original:** `# 🚀 The Ultimate Paradigm Shift in Modern Data Architecture`
+  >  - **Fix:** `# Modern Data Architecture`
+  >  - **Reason:** Removes the banned phrase "paradigm shift" and decorative emoji.
+  >
+  >  ### Line 7 — `binary_contrast` + `faux_insight` + `colon_reveal` + `fake_profound_kicker`
+  >  - **Original:** `What most people get wrong about databases is simple: it's not about speed, it's about trust.`
+  >  - **Fix:** `Database design balances speed and trust.`
+  >  - **Reason:** Removes rhetorical framing and fake insight.
 
-  ### Line 7 — `binary_contrast` + `faux_insight` + `colon_reveal` + `fake_profound_kicker`
-  - **Original:** `What most people get wrong about databases is simple: it's not about speed, it's about trust.`
-  - **Fix:** `Database design balances speed and trust.`
-  - **Reason:** Removes rhetorical framing and fake insight.
-  ```
 - After your review the plan is applied to produce an [improved document](examples/slop-improved.md).
 
 ## Features
@@ -466,11 +464,11 @@ npm run build    # Build
 
 ## Changelog
 
-See [`docs/CHANGELOG.md`](docs/CHANGELOG.md) for release history and notable changes.
+See [CHANGELOG](docs/CHANGELOG.md) for release history and notable changes.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines, development setup, and coding best practices.
+See [CONTRIBUTING](CONTRIBUTING.md) for contribution guidelines, development setup, and coding best practices.
 
 ## License
 
