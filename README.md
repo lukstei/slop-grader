@@ -6,7 +6,7 @@
 [![CI](https://github.com/lukstei/slop-grader/actions/workflows/ci.yml/badge.svg)](https://github.com/lukstei/slop-grader/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![NPM Version](https://img.shields.io/npm/v/@lukstei/slop-grader.svg)](https://www.npmjs.com/package/@lukstei/slop-grader)
-[![Minified Size](https://badgen.net/bundlephobia/min/@lukstei/slop-grader)](https://bundlephobia.com/package/@lukstei/slop-grader)
+![npm bundle size](https://img.shields.io/bundlephobia/min/%40lukstei%2Fslop-grader)
 
 Rule-based slop grader for text files, powered by [Jev](https://typesafe.ai).
 
@@ -68,8 +68,8 @@ Pass built-in rulesets by name (`-r article-scores`):
 |---|---|
 | [`article-scores`](rules/article-scores.md) | Document-level scores: engagement, narrative arc, closing strength |
 | [`tech-docs`](rules/tech-docs.md) | Technical documentation patterns: structure, task orientation, completeness, code examples, minimizing complexity |
-| [`grammar-english`](rules/grammar-english.md) | English grammar: typos, passive voice, comma splices, run-ons, subject-verb disagreement |
-| [`grammar-german`](rules/grammar-german.md) | German grammar: capitalization, comma splices, Anglicisms, compound spelling |
+| [`grammar-english`](rules/grammar-english.md) | English grammar: spelling and confused words, agreement, verb tenses, prepositions, pronouns, sentence structure, comparatives |
+| [`grammar-german`](rules/grammar-german.md) | German grammar: spelling and confused words, agreement and inflection, word order, punctuation and typography |
 | [`no-ai-slop`](rules/no-ai-slop.md) | Banned words, empty adverbs, puffery, colon reveals, bold lead-in lists, weasel attribution, dramatic fragmentation |
 
 ### Custom rulesets

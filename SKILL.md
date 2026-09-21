@@ -97,10 +97,10 @@ Common false positive patterns to dismiss without a fix:
 | `dramatic_fragmentation` | The fragment is natural spoken prose, not a mic-drop device |
 | `passive_voice_overuse` | The actor is unknown or the object deserves emphasis |
 | `academic_semicolon` | The clauses are tightly parallel and the semicolon reads naturally |
-| `anglicism_where_german_exists` | The English term is established in the target domain |
+| `spelling_and_confused_words` | The English term is established in the target domain |
 | `colon_reveal` | The colon introduces a list or definition, not drama |
 | `synonym_cycling` | The different terms mark a real distinction, not variety for style |
-| `missing_comma_subordinate` | The sentence is a list item or headline where a comma is grammatically optional |
+| `punctuation_and_typography` | The sentence is a list item or headline where a comma is grammatically optional |
 | `bold_lead_in_list` | The list is a genuine technical checklist, spec, API reference, or collection of distinct items where list structure aids scanning |
 
 When you dismiss a flag, state the reason in one sentence. Do not suggest a fix.
