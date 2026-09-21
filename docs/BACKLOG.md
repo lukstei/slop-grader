@@ -93,3 +93,8 @@
 - **Current State:** The CLI requires all inputs via flags and positional arguments (`-r`, target file). Running it with missing arguments immediately exits with a usage error string instead of guiding the user.
 - **Objective:** Add an interactive mode (via `--interactive` or when invoked without arguments in a TTY) that prompts step-by-step for required inputs such as target file, rulesets, provider, and output options.
 - **Agent Triage:** Prefer Node's native `readline/promises` to keep dependencies minimal. Check `process.stdin.isTTY` so non-interactive shells and CI pipes fail fast instead of hanging on prompts.
+
+### [ ] 18. Set Up Renovate for Automated Dependency Updates
+- **Current State:** Repository dependencies in `package.json` and GitHub Actions in `.github/workflows/` are tracked and bumped manually. No Renovate configuration exists in the repo.
+- **Objective:** Add a Renovate configuration (`renovate.json` or `.github/renovate.json5`) to automate npm and GitHub Actions dependency updates.
+- **Agent Triage:** Group non-breaking devDependencies and CI action bumps to limit PR volume. Ensure Renovate PRs trigger `npm run verify` in CI.

@@ -11,6 +11,18 @@
 Rule-based slop grader for text files, powered by [Jev](https://typesafe.ai).
 Runs every rule against every line in parallel. No skimming, no missed lines.
 
+- [How it works](#how-it-works)
+- [Features](#features)
+- [FAQ](#faq)
+- [Quick Start](#quick-start)
+- [Rulesets](#rulesets)
+- [CLI Reference](#cli-reference)
+- [Output Formats](#output-formats)
+- [Development](#development)
+- [Changelog](#changelog)
+- [Contributing](#contributing)
+- [License](#license)
+
 ## How it works
 
 `slop-grader` runs as a two-step loop: grade text with the CLI, then paste the output to your AI agent to plan the improvements.
@@ -42,6 +54,17 @@ Pass the output to your AI agent:
   - **Reason:** Removes rhetorical framing and fake insight.
   ```
 - After your review the plan is applied to produce an [improved document](examples/slop-improved.md).
+
+## Features
+
+- **[Parallel exhaustive grading](#how-it-works):** Checks every rule against every line independently. No skimming.
+- **System One efficiency:** Typed probabilities via [Jev](https://typesafe.ai) without text generation. Thousands of checks for cents.
+- **Dynamic batching:** Groups lines to token limits to minimize API calls. See [evaluation details](#faq).
+- **[Line and document scope](#rulesets):** Flags line patterns and rates whole documents on qualitative rubrics.
+- **Plain Markdown rulesets:** Write rules in [Markdown](docs/SYNTAX.md); validate offline with [`--check`](#flags).
+- **[Built-in rulesets](#built-in-rulesets):** Ready-to-use rules for AI writing patterns, document scores, tech docs, and grammar.
+- **Agent and CI ready:** [Terminal output](#human-readable-report) for [agent fix plans](examples/plan.md); [structured JSON](#json-report---json) for pipelines.
+- **[Multi-provider](#providers-and-environment-variables):** Works with TypeSafe AI and OpenRouter out of the box.
 
 ## FAQ
 
