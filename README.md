@@ -107,9 +107,9 @@ Running a separate check for every line and rule with a generative LLM is imprac
 </details>
 
 <details>
-<summary><strong>How much does it cost to check a file?</strong></summary>
+<summary><a id="how-much-does-it-cost-to-check-a-file"></a><strong>How much does it cost to check a file?</strong></summary>
 
-Cost scales with the number of rules and non-empty lines.
+Cost scales with the number of rules and non-empty lines. Re-evaluating an edited document only costs for changed lines—unchanged lines resolve from cache with zero API calls.
 
 Checking [`examples/slop.md`](examples/slop.md) (16 text lines) against 53 rules costs roughly \$0.0053 (half a cent):
 
