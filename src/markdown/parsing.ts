@@ -90,7 +90,8 @@ class MarkdownParser {
 
 			if (
 				end !== "" &&
-				(this.matches(end) || this.matches(...MarkdownParser.NEWLINE))
+				(this.matchesClosingDelimiter(end) ||
+					this.matches(...MarkdownParser.NEWLINE))
 			) {
 				break;
 			}
@@ -272,9 +273,8 @@ class MarkdownParser {
 		const startIndex = this.index;
 
 		switch (char) {
-			case "*":
-			case "_": {
-				const delimiter = this.matches("**") ? "**" : char;
+			case "*": {
+				const delimiter = this.matches("**") ? "**" : "*";
 
 				this.advance(delimiter.length);
 
@@ -284,6 +284,36 @@ class MarkdownParser {
 
 				return {
 					type: delimiter.length === 1 ? "italic" : "bold",
+					children,
+					source: this.getSlice(startIndex, this.index),
+				};
+			}
+
+			case "_": {
+				const prevChar = startIndex > 0 ? this.chars[startIndex - 1] : "";
+				const nextChar =
+					startIndex + 1 < this.length ? this.chars[startIndex + 1] : "";
+
+				// Intra-word underscore: cannot open emphasis if preceded by an alphanumeric char
+				// Also cannot open if followed by whitespace or EOF
+				if (
+					/[a-zA-Z0-9]/.test(prevChar) ||
+					/\s/.test(nextChar) ||
+					nextChar === ""
+				) {
+					return null;
+				}
+
+				const delimiter = "_";
+
+				this.advance(1);
+
+				const children = this.parseNext(delimiter, true);
+
+				this.match(delimiter);
+
+				return {
+					type: "italic",
 					children,
 					source: this.getSlice(startIndex, this.index),
 				};
@@ -543,6 +573,31 @@ class MarkdownParser {
 		return lookahead.some(
 			(substring) => this.lookAhead(substring.length) === substring,
 		);
+	}
+
+	private matchesClosingDelimiter(end: string): boolean {
+		if (!this.matches(end)) {
+			return false;
+		}
+
+		if (end === "_") {
+			const prevChar = this.index > 0 ? this.chars[this.index - 1] : "";
+			const nextChar =
+				this.index + end.length < this.length
+					? this.chars[this.index + end.length]
+					: "";
+
+			// Underscore cannot close if preceded by whitespace or followed by an alphanumeric char
+			if (
+				/\s/.test(prevChar) ||
+				prevChar === "" ||
+				/[a-zA-Z0-9]/.test(nextChar)
+			) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	private match(...lookahead: string[]): void {

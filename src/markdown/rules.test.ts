@@ -516,4 +516,22 @@ echo "hello"
 		expect(result.code_rule).toBeDefined();
 		expect(result.code_rule?.instructions).toContain("# Not a heading comment");
 	});
+
+	it("preserves rule identifiers with multiple underscores without stripping to italics", () => {
+		const md = `# Line Rules
+
+## spelling_and_confused_words
+Check spelling.
+
+### Criteria
+- **true**: misspelled
+- **false**: correct
+`;
+		const result = parseMarkdownRules(md);
+		expect(Object.keys(result)).toMatchInlineSnapshot(`
+			[
+			  "spelling_and_confused_words",
+			]
+		`);
+	});
 });

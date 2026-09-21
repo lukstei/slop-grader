@@ -487,6 +487,26 @@ describe("A Markdown parser function", () => {
 					content: "Hello, _\nworld_!",
 				},
 			},
+			"intra-word underscore is not italic": {
+				input: "foo_bar_baz",
+				output: {
+					type: "text",
+					source: "foo_bar_baz",
+					content: "foo_bar_baz",
+				},
+			},
+			"entire snake_case identifier in underscore italic": {
+				input: "_snake_case_ident_",
+				output: {
+					type: "italic",
+					source: "_snake_case_ident_",
+					children: {
+						type: "text",
+						source: "snake_case_ident",
+						content: "snake_case_ident",
+					},
+				},
+			},
 			"italic (asterisk)": {
 				input: "Hello, *world*!",
 				output: {
