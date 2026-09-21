@@ -42,10 +42,10 @@ Pass the output to your AI agent:
   ```
 - After your review the plan is applied to produce an [improved document](examples/slop-improved.md).
 
-<details>
-<summary><strong>FAQ</strong></summary>
+## FAQ
 
-### How does evaluation work?
+<details>
+<summary><strong>How does evaluation work?</strong></summary>
 
 Evaluation separates line-level checks (spotting specific patterns or phrases) from document-level checks (evaluating tone or overall structure).
 
@@ -53,13 +53,40 @@ Documents have hundreds of lines, but the number of rules is fixed. Sending one 
 
 Document rules run in a single request across the entire text.
 
-### How is this different from using an LLM to check text?
+</details>
+
+<details>
+<summary><strong>How is this different from using an LLM to check text?</strong></summary>
 
 Standard generative LLMs evaluate an entire document in a single prompt against a list of rules. On longer texts, they skip lines, miss rules, and report wrong line numbers.
 
 Running a separate check for every line and rule with a generative LLM is impractical. A 300-line draft tested against 10 rules would require 3,000 text-generation requests, which is slow and expensive.
 
 `slop-grader` uses a System One model ([Jev](https://typesafe.ai)). System One models answer discrete semantic questions with typed probabilities without generating text. Because these judgments return numbers instead of prose tokens, `slop-grader` can test every line against every rule separately and in parallel.
+
+</details>
+
+<details>
+<summary><strong>Can I use custom rules for my use case?</strong></summary>
+
+Yes. You can write custom rules in Markdown (`-r ./my-rules.md`) or JSON. Rules ask plain-text questions about a single line or the whole document, evaluated against criteria you define. See [Custom rulesets](#custom-rulesets) in the [Rulesets](#rulesets) section for syntax details and validation instructions.
+
+</details>
+
+<details>
+<summary><strong>Which use cases exist for this tool?</strong></summary>
+
+`slop-grader` works on any plain text, structured file, or code diff:
+
+- Catch AI writing habits, filler adverbs, and rhetorical formulas in drafts and essays.
+- Check technical documentation for missing code examples, disorganized steps, or unexplained jargon.
+- Scan code review diffs for swallowed errors, hardcoded credentials, and unjustified type assertions.
+- Audit CSV spreadsheets and transaction logs for values exceeding approval thresholds.
+- Review contracts and legal agreements for uncapped indemnification obligations.
+- Check customer support transcripts for unreleased feature commitments or unauthorized discounts.
+- Evaluate incident postmortems to confirm they address systemic defenses instead of individual human error.
+
+See the [Rulesets](#rulesets) section for pre-built rules and example templates.
 
 </details>
 
