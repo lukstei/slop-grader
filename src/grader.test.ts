@@ -1,3 +1,5 @@
+import { readdir } from "node:fs/promises";
+import { join } from "node:path";
 import type { Answers } from "@openrouter/sdk/models/decisionsresponse";
 import { describe, expect, it } from "vitest";
 import {
@@ -373,5 +375,17 @@ Third line`;
 		expect(Object.keys(docRules).length).toBe(8);
 		expect(lineRules.banned_word).toBeDefined();
 		expect(docRules.engagement).toBeDefined();
+	});
+
+	it("loads and validates all rules in the rules directory cleanly", async () => {
+		const files = (await readdir("rules")).filter((f) => f.endsWith(".md"));
+		expect(files.length).toBeGreaterThan(0);
+
+		for (const file of files) {
+			const { lineRules, docRules } = await loadRules([join("rules", file)]);
+			expect(
+				Object.keys(lineRules).length + Object.keys(docRules).length,
+			).toBeGreaterThan(0);
+		}
 	});
 });
