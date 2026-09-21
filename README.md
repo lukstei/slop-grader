@@ -41,12 +41,12 @@ npx @lukstei/slop-grader@latest -r no-ai-slop examples/slop.md
 Pass the output to your AI agent:
 
 - The agent distinguishes real violations from false positives and generates concrete replacements ([Example with Gemini 3.8 Flash](examples/plan.md)):
-  >  **Line 1 — `banned_word`**
+  >  #### Line 1 — `banned_word`
   >  - **Original:** `# 🚀 The Ultimate Paradigm Shift in Modern Data Architecture`
   >  - **Fix:** `# Modern Data Architecture`
   >  - **Reason:** Removes the banned phrase "paradigm shift" and decorative emoji.
   >
-  >  **Line 7 — `binary_contrast` + `faux_insight` + `colon_reveal` + `fake_profound_kicker`**
+  >  #### Line 7 — `binary_contrast` + `faux_insight` + `colon_reveal`
   >  - **Original:** `What most people get wrong about databases is simple: it's not about speed, it's about trust.`
   >  - **Fix:** `Database design balances speed and trust.`
   >  - **Reason:** Removes rhetorical framing and fake insight.
