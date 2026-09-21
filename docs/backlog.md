@@ -54,3 +54,15 @@
 - **Objective:** Add a CLI flag (e.g. `--copy` or `--clipboard`) that copies the generated report to the clipboard and prints a minimal summary to the terminal.
 - **Agent Triage:** Handle cross-platform clipboard commands (`pbcopy`, `wl-copy`/`xclip`, PowerShell) or an npm package without native build dependencies. Confirm if the clipboard gets the full report while the terminal shows a one-line summary.
 
+### [ ] 10. Package Manager Distribution (Homebrew, APT, etc.)
+- **Current State:** Distribution is limited to npm (`@lukstei/slop-grader`), requiring an existing Node.js environment and npm/npx.
+- **Objective:** Distribute `slop-grader` through OS package managers such as Homebrew and APT, allowing installation without a pre-existing Node runtime.
+- **Agent Triage:** Choose between bundled standalone binaries (Node SEA, bun compile) and standard package recipes that declare Node as a dependency. Automate formula updates and package builds during releases.
+
+### [ ] 11. Extend Built-In Ruleset Library
+- **Current State:** `rules/` ships with 5 rulesets focusing on grammar (EN/DE), general AI slop, article scoring, and tech docs. Common engineering contexts such as commit messages, PR descriptions, and architecture decision records lack presets.
+- **Objective:** Expand the built-in library with rulesets targeted at daily developer workflows, including git commits, pull requests, RFCs, and release notes.
+- **Agent Triage:** Prioritize developer-facing writing where clear style criteria already exist (e.g. Conventional Commits, ADR templates). Keep rulesets orthogonal to prevent conflicting judgments when combining flags.
+
+
+
