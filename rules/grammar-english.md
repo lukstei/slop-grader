@@ -2,26 +2,61 @@ English grammar and style rules: spelling and confused words, grammatical agreem
 
 # Line Rules
 
-## spelling_and_confused_words
-Does the line contain a typo, misspelled word, incorrect homophone, erroneous contraction, or commonly confused word pair?
+## spelling_and_typos
+Does the line contain a typo, misspelled word, swapped/missing/extra letters, or non-standard spelling?
 
 ### Criteria
-- **true**: A word is misspelled, contains swapped/missing/extra letters, confuses homophones or contractions, or uses the wrong word from a commonly confused pair (e.g. "fourty" for "forty", "pronounciation" for "pronunciation", "alot" for "a lot", "themself" for "themselves", "its" for "it's", "your" for "you're", "there" for "their/they're", "whose" for "who's", "then" for "than", "loose" for "lose", "passed" for "past", "weather" for "whether", "pore" for "pour", "wreck" for "wreak", "averse" for "adverse", "disinterested" for "uninterested", "hardly" for "hard", "every day" (adverb) for "everyday" (adjective), "awhile" for "a while", "beside" for "besides", "bring" for "take", "can" for "may", "deadly" for "deathly", "farther" for "further", "early" for "soon").
-- **false**: Words are spelled correctly and fit the context with their intended meaning.
+- **true**: A word is misspelled or contains typographical errors (e.g. "fourty" for "forty", "pronounciation" for "pronunciation", "alot" for "a lot", "themself" for "themselves").
+- **false**: All words are spelled correctly.
+
+## homophones_and_contractions
+Does the line confuse homophones, possessive forms, or apostrophe contractions?
+
+### Criteria
+- **true**: A word confuses sound-alike homophones or errs in contraction apostrophes (e.g. "its" for "it's", "your" for "you're", "there" for "their/they're", "whose" for "who's").
+- **false**: Contractions and homophones are used with their correct grammatical meaning and spelling.
+
+## confused_words
+Does the line misuse a word from a commonly confused pair or false-friend pair?
+
+### Criteria
+- **true**: The line uses the wrong word from a pair with distinct meanings (e.g. "then" for "than", "loose" for "lose", "passed" for "past", "weather" for "whether", "pore" for "pour", "wreck" for "wreak", "averse" for "adverse", "disinterested" for "uninterested", "hardly" for "hard", "every day" for "everyday", "awhile" for "a while", "beside" for "besides", "bring" for "take", "can" for "may", "deadly" for "deathly", "farther" for "further", "early" for "soon").
+- **false**: Words fit their precise semantic definition in context.
 
 ## grammatical_agreement
-Does the line contain a grammatical agreement error in number between subject and verb, determiner and noun, or within correlative and collective constructions?
+Does the line contain an agreement error in number between subject and verb, determiner and noun, or within correlative/collective constructions?
 
 ### Criteria
 - **true**: The verb number mismatches the subject, or a quantifier mismatches its noun (e.g. "The list of features are" instead of "is"; "Every students is" instead of "Every student is"; "Each of the cars are" instead of "is"; "One of the train is" instead of "One of the trains is"; "The police is" instead of "are"; "Mathematics are" instead of "is"; "Either Jack or Joan are" instead of "is"; "The number of vehicles are" instead of "is"; "The ring as well as necklaces are" instead of "is").
 - **false**: Subjects, verbs, quantifiers, and collective nouns agree correctly in grammatical number.
 
-## verb_form_and_tense
-Does the line contain an error in verb form, auxiliary usage, sequence of tenses, conditional/time-clause tense, duration aspect, subjunctive mood, or verb complementation (gerund vs infinitive)?
+## verb_inflection
+Does the line contain an error in verb inflection, irregular verb form, or auxiliary combination?
 
 ### Criteria
-- **true**: A verb uses an incorrect inflection, auxiliary combination, tense, aspect, mood, or complement form (e.g. "did not saw" instead of "did not see"; "has ran" instead of "has run"; "suppose to" instead of "supposed to"; "If I will visit" instead of "If I visit"; "till they will finish" instead of "till they finish"; "succeeded because she works" instead of "worked"; "am waiting for two hours" instead of "have been waiting"; "have completed yesterday" instead of "completed yesterday"; "If I was" in counterfactual wishes instead of "If I were"; "enjoy to go" instead of "enjoy going"; "habit to arrive" instead of "habit of arriving"; "know to drive" instead of "know how to drive"; "nothing but to find" instead of "nothing but find").
-- **false**: Verb tenses, auxiliary combinations, participles, conditionals, and gerund/infinitive forms are used correctly.
+- **true**: A verb uses an incorrect principal part, past participle, or auxiliary combination (e.g. "did not saw" instead of "did not see"; "has ran" instead of "has run"; "suppose to" instead of "supposed to").
+- **false**: Auxiliary verbs and inflected verb forms are used correctly.
+
+## tense_and_sequence
+Does the line contain an error in sequence of tenses, conditional/time-clause tense, or aspect/duration?
+
+### Criteria
+- **true**: A verb uses an incorrect tense sequence, invalid future tense in a conditional or time clause, or mismatched aspect (e.g. "If I will visit" instead of "If I visit"; "till they will finish" instead of "till they finish"; "succeeded because she works" instead of "worked"; "am waiting for two hours" instead of "have been waiting"; "have completed yesterday" instead of "completed yesterday").
+- **false**: Tenses, time clauses, conditionals, and duration aspects align with standard grammar.
+
+## subjunctive_mood
+Does the line use an indicative verb where the subjunctive mood is required in a counterfactual or hypothetical clause?
+
+### Criteria
+- **true**: The line uses "was" instead of subjunctive "were" in contrary-to-fact wishes or conditional clauses (e.g. "If I was" in counterfactuals instead of "If I were"; "I wish he was here" instead of "were").
+- **false**: Subjunctive "were" is used in counterfactual expressions, or indicative verbs are used in factual contexts.
+
+## verb_complementation
+Does the line err in verb complementation, confusing gerund and infinitive forms or omitting required complement particles?
+
+### Criteria
+- **true**: A verb takes the wrong complement structure (e.g. "enjoy to go" instead of "enjoy going"; "habit to arrive" instead of "habit of arriving"; "know to drive" instead of "know how to drive"; "nothing but to find" instead of "nothing but find").
+- **false**: Verbs are followed by their idiomatic gerund, infinitive, or prepositional complement.
 
 ## preposition_and_collocation
 Does the line use an incorrect, missing, or redundant preposition in an idiom, phrasal verb, temporal expression, or fixed collocation?
@@ -30,26 +65,75 @@ Does the line use an incorrect, missing, or redundant preposition in an idiom, p
 - **true**: A preposition is wrong, omitted where required, or redundantly added (e.g. "married with" instead of "married to"; "senior than" instead of "senior to"; "admission for" instead of "admission to"; "blind with one eye" instead of "blind in"; "In January 13th" instead of "On"; "since three months" instead of "for three months"; "during" vs "for" duration; "emphasizes on" instead of "emphasizes"; "came across with" instead of "came across"; "listen music" instead of "listen to music"; "waited on the train" instead of "waited for"; "due to fact that" instead of "due to the fact that"; "in my point of view" instead of "from my point of view" or "in my view").
 - **false**: Prepositions and collocations match standard English idiomatic usage.
 
-## pronoun_case_and_reference
-Does the line contain an error in pronoun case (subjective vs objective), pronoun-antecedent consistency, pronoun ordering, or possessive apostrophe placement?
+## pronoun_case
+Does the line contain an error in pronoun case (subjective vs objective)?
 
 ### Criteria
-- **true**: A pronoun uses the wrong grammatical case, conflicts with its antecedent, or uses incorrect order or apostrophe placement (e.g. "Smith and me went" instead of "Smith and I went"; "Let he go" instead of "Let him go"; "Whom called me?" instead of "Who"; "The person whom we met was..." where subjective "who" is intended; "One should respect his own" instead of "one's own"; "Smith's and Peter's car" for joint ownership instead of "Smith and Peter's car"; "You, they and we" instead of "We, you and they").
-- **false**: Pronouns match their required case, order, and antecedents, and possessives are formed correctly.
+- **true**: A pronoun appears in the objective case where subjective is required, or subjective where objective is required (e.g. "Smith and me went" instead of "Smith and I went"; "Let he go" instead of "Let him go"; "Whom called me?" instead of "Who"; "The person whom we met was..." where subjective "who" is intended).
+- **false**: Pronouns appear in their correct grammatical case based on their syntactic role.
 
-## sentence_structure_and_clauses
-Does the line contain a comma splice, run-on sentence, dangling or misplaced modifier, double negative, redundant correlative, or missing coordinate subject?
-
-### Criteria
-- **true**: Clauses are improperly joined, modifiers are misplaced or dangling, or the structure contains double negatives or redundant conjunctions (e.g. "The build failed, we rolled back" without a coordinating conjunction; "The server crashed the team investigated" with no boundary punctuation; "Running the tests, the bug was found" where the modifier attaches to the wrong subject; "almost washed all of the cars" instead of "washed almost all"; "didn't meet no one" instead of "anyone"; "decided not to appoint him neither... nor..."; "Although it was raining, but we went" instead of omitting "but"; "must have to" instead of choosing one; "too honest so that she cannot lie" instead of "too honest to lie"; "noticed the man lying ill and died" missing subject "he").
-- **false**: Clauses are properly joined, modifiers attach to their intended subjects, and sentence structures avoid double negatives and redundant conjunctions.
-
-## comparatives_and_determiners
-Does the line contain an error in comparative or superlative formation, absolute/ungradable adjectives, two vs three+ comparisons, countable vs uncountable determiners, or article selection?
+## pronoun_antecedent_and_order
+Does the line contain a conflict in pronoun-antecedent agreement or awkward personal pronoun ordering?
 
 ### Criteria
-- **true**: A comparative or determiner is incorrectly formed or used (e.g. "more tall" instead of "taller"; "most unique" or "more perfect" for absolute adjectives; "Who's the best performer, John or Smith?" instead of "better"; "among the two" instead of "between"; "less dresses" instead of "fewer dresses"; "amount of people" instead of "number of people"; "a old" instead of "an old"; "an university" instead of "a university"; "the two last columns" instead of "the last two columns"; "Gita is his favourite book" missing required article "The").
-- **false**: Comparatives, superlatives, determiners, quantifiers, and articles are used correctly.
+- **true**: A pronoun conflicts with its antecedent in person/number, or violates conventional polite pronoun ordering (e.g. "One should respect his own" instead of "one's own"; "You, they and we" instead of "We, you and they").
+- **false**: Pronouns agree consistently with their antecedents and follow natural ordering conventions.
+
+## possessive_apostrophe
+Does the line misuse possessive apostrophes in joint vs separate ownership or irregular noun forms?
+
+### Criteria
+- **true**: An apostrophe is misplaced or improperly duplicated in joint ownership constructions (e.g. "Smith's and Peter's car" for joint ownership instead of "Smith and Peter's car").
+- **false**: Possessive apostrophes correctly reflect joint or individual ownership.
+
+## run_on_and_comma_splice
+Does the line contain a comma splice or a fused run-on sentence?
+
+### Criteria
+- **true**: Two independent clauses are joined with only a comma and no coordinating conjunction, or fused together with no boundary punctuation (e.g. "The build failed, we rolled back"; "The server crashed the team investigated").
+- **false**: Independent clauses are properly joined with conjunctions, semicolons, or separated into distinct sentences.
+
+## dangling_modifier
+Does the line contain a dangling or misplaced modifier that attaches to the wrong subject?
+
+### Criteria
+- **true**: A participial phrase or descriptive modifier attaches illogically to the nearest noun rather than the intended actor, or an adverb is misplaced (e.g. "Running the tests, the bug was found"; "almost washed all of the cars" instead of "washed almost all").
+- **false**: Modifiers clearly and logically attach to their intended subjects.
+
+## double_negative
+Does the line contain an improper double negative construction?
+
+### Criteria
+- **true**: Two negative words combine to create a non-standard negative expression (e.g. "didn't meet no one" instead of "didn't meet anyone"; "decided not to appoint him neither... nor...").
+- **false**: Negation is expressed cleanly with single negative elements or standard positive constructions.
+
+## redundant_conjunction
+Does the line contain redundant conjunctions, correlatives, or stacked modals?
+
+### Criteria
+- **true**: Two conjunctions or modals are stacked redundantly, or a correlative structure is duplicated (e.g. "Although it was raining, but we went" instead of omitting "but"; "must have to" instead of choosing one; "too honest so that she cannot lie" instead of "too honest to lie"; "noticed the man lying ill and died" missing coordinate subject "he").
+- **false**: Coordinating and subordinating conjunctions are used without redundancy.
+
+## comparatives_and_superlatives
+Does the line contain an error in comparative or superlative formation, absolute adjectives, or two vs three+ comparisons?
+
+### Criteria
+- **true**: A comparative or superlative is formed incorrectly, applied to an ungradable/absolute adjective, or confuses comparison between two versus three or more items (e.g. "more tall" instead of "taller"; "most unique" or "more perfect" for absolute adjectives; "Who's the best performer, John or Smith?" instead of "better"; "among the two" instead of "between").
+- **false**: Comparatives and superlatives are formed according to standard inflection and grade distinctions.
+
+## determiners_and_quantifiers
+Does the line confuse countable versus uncountable determiners and quantifiers?
+
+### Criteria
+- **true**: A quantifier or determiner mismatches countability (e.g. "less dresses" instead of "fewer dresses"; "amount of people" instead of "number of people").
+- **false**: Quantifiers and determiners match the countability of the noun they modify.
+
+## article_usage
+Does the line use an incorrect indefinite article ("a" vs "an"), misplace an article, or omit a required definite article?
+
+### Criteria
+- **true**: An article is phonetically mismatched ("a" before vowel sound or "an" before consonant sound), placed in the wrong order, or omitted where required (e.g. "a old" instead of "an old"; "an university" instead of "a university"; "the two last columns" instead of "the last two columns"; "Gita is his favourite book" missing required article "The").
+- **false**: Articles are phonetically correct, placed properly, and present where required.
 
 ## passive_voice_overuse
 Is the line written in passive voice where an active construction with a named subject would be clearer?
