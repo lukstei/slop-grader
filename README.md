@@ -109,7 +109,7 @@ Running a separate check for every line and rule with a generative LLM is imprac
 <details>
 <summary><a id="how-much-does-it-cost-to-check-a-file"></a><strong>How much does it cost to check a file?</strong></summary>
 
-Cost scales with the number of rules and non-empty lines. Re-evaluating an edited document only costs for changed lines—unchanged lines resolve from cache with zero API calls.
+Cost scales with the number of rules and non-empty lines.
 
 Checking [`examples/slop.md`](examples/slop.md) (16 text lines) against 53 rules costs roughly \$0.0053 (half a cent):
 
@@ -130,6 +130,8 @@ Questions asked:              12600
 API calls:                    84
 Questions evaluated via API:  12600
 ```
+
+Re-evaluating an edited document only costs for changed lines, unchanged lines resolve from cache with zero API calls.
 
 Because Jev evaluates semantic probabilities instead of generating text tokens, running thousands of parallel checks costs a fraction of standard LLM generation.
 
