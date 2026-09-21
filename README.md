@@ -50,7 +50,7 @@ Pass the output to your AI agent:
 
 Evaluation separates line-level checks (spotting specific patterns or phrases) from document-level checks (evaluating tone or overall structure).
 
-Documents have hundreds of lines, but the number of rules is fixed. Sending one API request per line would mean hundreds of calls. Instead, `slop-grader` groups lines into batches of 255 and evaluates each rule across the batch in a single call. A 300-line document with 5 rules runs in 10 parallel requests.
+Documents have hundreds of lines, but the number of rules is fixed. Sending one API request per line would mean hundreds of calls. Instead, `slop-grader` dynamically groups lines into batches sized to fit the model's context budget (up to 255 lines per batch) and evaluates each rule across its batch in a single call.
 
 Document rules run in a single request across the entire text.
 
@@ -64,6 +64,33 @@ Standard generative LLMs evaluate an entire document in a single prompt against 
 Running a separate check for every line and rule with a generative LLM is impractical. A 300-line draft tested against 10 rules would require 3,000 text-generation requests, which is slow and expensive.
 
 `slop-grader` uses a System One model ([Jev](https://typesafe.ai)). System One models answer discrete semantic questions with typed probabilities without generating text. Because these judgments return numbers instead of prose tokens, `slop-grader` can test every line against every rule separately and in parallel.
+
+</details>
+
+<details>
+<summary><strong>How much does it cost to check a file?</strong></summary>
+
+Cost scales with the number of rules and non-empty lines.
+
+Checking [`examples/slop.md`](examples/slop.md) (16 text lines) against 53 rules costs roughly \$0.0053 (half a cent):
+
+```
+Rules applied:    53 (48 line, 5 document)
+Lines evaluated:  16
+Questions asked:  773
+API calls:        49
+```
+
+Checking a 2,100-word article (300 text lines) against 42 rules costs roughly \$0.076 (7.6 cents):
+
+```
+Rules applied:    42
+Lines evaluated:  300
+Questions asked:  12600
+API calls:        84
+```
+
+Because Jev evaluates semantic probabilities instead of generating text tokens, running thousands of parallel checks costs a fraction of standard LLM generation.
 
 </details>
 
