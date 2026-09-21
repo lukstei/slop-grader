@@ -179,6 +179,8 @@ describe("main CLI", () => {
 		const parsed = parseCliArgs(["-r", "no-ai-slop", "README.md"]);
 		expect(stripAbsolutePaths(parsed)).toMatchInlineSnapshot(`
 			{
+			  "cache": true,
+			  "cacheDir": undefined,
 			  "check": false,
 			  "debug": false,
 			  "file": "README.md",
@@ -209,6 +211,8 @@ describe("main CLI", () => {
 		]);
 		expect(stripAbsolutePaths(parsed)).toMatchInlineSnapshot(`
 			{
+			  "cache": true,
+			  "cacheDir": undefined,
 			  "check": false,
 			  "debug": false,
 			  "file": "README.md",
@@ -231,6 +235,8 @@ describe("main CLI", () => {
 		const parsedLong = parseCliArgs(["--check", "-r", "no-ai-slop"]);
 		expect(stripAbsolutePaths(parsedLong)).toMatchInlineSnapshot(`
 			{
+			  "cache": true,
+			  "cacheDir": undefined,
 			  "check": true,
 			  "debug": false,
 			  "file": undefined,
@@ -253,6 +259,8 @@ describe("main CLI", () => {
 		const parsedPositional = parseCliArgs(["--check", "rules/no-ai-slop.md"]);
 		expect(stripAbsolutePaths(parsedPositional)).toMatchInlineSnapshot(`
 			{
+			  "cache": true,
+			  "cacheDir": undefined,
 			  "check": true,
 			  "debug": false,
 			  "file": "rules/no-ai-slop.md",
@@ -308,6 +316,19 @@ describe("main CLI", () => {
 		expect(parsedShort.debug).toBe(true);
 	});
 
+	it("parseCliArgs parses --no-cache and --cache-dir flags", () => {
+		const parsed = parseCliArgs([
+			"-r",
+			"no-ai-slop",
+			"--no-cache",
+			"--cache-dir",
+			"/custom/cache",
+			"README.md",
+		]);
+		expect(parsed.cache).toBe(false);
+		expect(parsed.cacheDir).toBe("/custom/cache");
+	});
+
 	it("parseCliArgs parses --help and -h flags", () => {
 		expect(parseCliArgs(["--help"]).help).toBe(true);
 		expect(parseCliArgs(["-h"]).help).toBe(true);
@@ -326,20 +347,20 @@ describe("main CLI", () => {
 
 	it("parseCliArgs throws usage on missing arguments", () => {
 		expect(() => parseCliArgs([])).toThrowErrorMatchingInlineSnapshot(
-			`[Error: usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [-h|--help] [-v|--version] [file]]`,
+			`[Error: usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]]`,
 		);
 		expect(() =>
 			parseCliArgs(["README.md"]),
 		).toThrowErrorMatchingInlineSnapshot(
-			`[Error: usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [-h|--help] [-v|--version] [file]]`,
+			`[Error: usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]]`,
 		);
 		expect(() =>
 			parseCliArgs(["-r", "no-ai-slop"]),
 		).toThrowErrorMatchingInlineSnapshot(
-			`[Error: usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [-h|--help] [-v|--version] [file]]`,
+			`[Error: usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]]`,
 		);
 		expect(() => parseCliArgs(["--check"])).toThrowErrorMatchingInlineSnapshot(
-			`[Error: usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [-h|--help] [-v|--version] [file]]`,
+			`[Error: usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]]`,
 		);
 	});
 

@@ -4,6 +4,7 @@ import { readdir, readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
+import { LineCacheManager } from "./cache.ts";
 import {
 	gradeDocument,
 	gradeLines,
@@ -65,6 +66,8 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 	json: boolean;
 	stats: boolean;
 	debug: boolean;
+	cache: boolean;
+	cacheDir?: string;
 	help: boolean;
 	version: boolean;
 	listRulesets: boolean;
@@ -79,6 +82,8 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 			json: { type: "boolean", short: "j", default: false },
 			stats: { type: "boolean", short: "s", default: false },
 			debug: { type: "boolean", short: "d", default: false },
+			"no-cache": { type: "boolean", default: false },
+			"cache-dir": { type: "string" },
 			help: { type: "boolean", short: "h", default: false },
 			version: { type: "boolean", short: "v", default: false },
 			"list-rulesets": { type: "boolean", short: "l", default: false },
@@ -96,6 +101,7 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 			json: values.json ?? false,
 			stats: false,
 			debug: false,
+			cache: true,
 			help,
 			version,
 			listRulesets,
@@ -109,7 +115,7 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 
 	if (!rulesPaths.length || (!check && !file)) {
 		throw new Error(
-			"usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [-h|--help] [-v|--version] [file]",
+			"usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]",
 		);
 	}
 
@@ -124,6 +130,8 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 		);
 	}
 
+	const cache = !values["no-cache"];
+
 	return {
 		check,
 		rulesPaths,
@@ -133,6 +141,8 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 		json: values.json ?? false,
 		stats: values.stats ?? false,
 		debug: values.debug ?? false,
+		cache,
+		cacheDir: values["cache-dir"],
 		help: false,
 		version: false,
 		listRulesets: false,
@@ -140,7 +150,7 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 }
 
 const USAGE =
-	"usage: slop-grader [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [-h|--help] [-v|--version] [file]";
+	"usage: slop-grader [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]";
 
 async function main() {
 	const {
@@ -152,6 +162,8 @@ async function main() {
 		json,
 		stats,
 		debug,
+		cache,
+		cacheDir,
 		help,
 		version,
 		listRulesets,
@@ -212,9 +224,13 @@ async function main() {
 	const provider = createProvider(providerName, model);
 
 	let apiCalls = 0;
+	let apiQuestions = 0;
 	const trackingProvider: Provider = {
+		name: provider.name,
+		model: provider.model,
 		async createDecision(req) {
 			const callIndex = ++apiCalls;
+			apiQuestions += Object.keys(req.questions).length;
 			const start = performance.now();
 			try {
 				const res = await provider.createDecision(req);
@@ -266,10 +282,19 @@ async function main() {
 	]);
 	const lines = parseLines(fullText);
 
-	const [flags, docResult] = await Promise.all([
-		gradeLines(lines, lineRules, trackingProvider),
+	const cacheManager = cache
+		? new LineCacheManager({
+				baseDir: cacheDir,
+				provider: provider.name,
+				model: provider.model,
+			})
+		: undefined;
+
+	const [lineResult, docResult] = await Promise.all([
+		gradeLines(lines, lineRules, trackingProvider, cacheManager),
 		gradeDocument(fullText, docRules, trackingProvider),
 	]);
+	const { flags, cacheHits } = lineResult;
 	const { scores, flags: docFlags } = docResult;
 
 	const lineRulesCount = Object.keys(lineRules).length;
@@ -282,6 +307,8 @@ async function main() {
 				lines: lines.length,
 				questions: lines.length * lineRulesCount + docRulesCount,
 				apiCalls,
+				apiQuestions,
+				cacheHits: cache ? cacheHits : undefined,
 			}
 		: undefined;
 

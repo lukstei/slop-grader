@@ -36,6 +36,8 @@ export type Stats = {
 	lines: number;
 	questions: number;
 	apiCalls: number;
+	apiQuestions: number;
+	cacheHits?: number;
 };
 
 export type RulesetScope = "line" | "document" | "mixed";

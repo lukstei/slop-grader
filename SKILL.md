@@ -8,7 +8,7 @@ description: >
 
 # Slop Grading — Review & Fix Plan
 
-You receive the output of `slop-grader` (human-readable text or JSON via `--json`) and the original source file. Available built-in rulesets can be listed with `slop-grader --list-rulesets` (or `-l`, `--json` to inspect scopes, rule counts, and rule IDs). Your job is to triage every flagged line, dismiss false positives, and produce a minimal fix plan with exact replacement text for every genuine violation.
+You receive the output of `slop-grader` (human-readable text or JSON via `--json`) and the original source file. Available built-in rulesets can be listed with `slop-grader --list-rulesets` (or `-l`, `--json` to inspect scopes, rule counts, and rule IDs). Line evaluations are cached by default; pass `--no-cache` to force full re-evaluation. Your job is to triage every flagged line, dismiss false positives, and produce a minimal fix plan with exact replacement text for every genuine violation.
 
 ## Output formats of slop-grader
 
@@ -34,10 +34,12 @@ closing_strength 0.3/3   (confidence high)  "Trails off or optimizes"
 
 ## Stats
 
-Rules applied:    6 (5 line, 1 document)
-Lines evaluated:  12
-Questions asked:  61
-API calls:        6
+Rules applied:                6 (5 line, 1 document)
+Lines evaluated:              12
+Questions asked:              61
+API calls:                    6
+Questions evaluated via API:  61
+Cache hits:                   0
 ```
 
 - **Legend:** maps letters to rule IDs (`A`–`Z`, `AA`–`ZZ`).

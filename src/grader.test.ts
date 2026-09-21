@@ -2,6 +2,7 @@ import { readdir } from "node:fs/promises";
 import { join } from "node:path";
 import type { Answers } from "@openrouter/sdk/models/decisionsresponse";
 import { describe, expect, it } from "vitest";
+import { LineCacheManager } from "./cache.ts";
 import {
 	batchLines,
 	buildBatchRequest,
@@ -318,6 +319,8 @@ Third line`;
 
 	it("gradeLines and gradeDocument with mock provider", async () => {
 		const mockProvider: Provider = {
+			name: "jev",
+			model: "jev-1.13.0",
 			async createDecision(req) {
 				const answers: Record<string, Answers> =
 					typeof req.state === "string" && req.state.startsWith("L0001")
@@ -340,7 +343,12 @@ Third line`;
 				instructions: "Detect buzzwords",
 			},
 		};
-		const flags = await gradeLines(lines, lineRules, mockProvider);
+		const { flags, cacheHits } = await gradeLines(
+			lines,
+			lineRules,
+			mockProvider,
+		);
+		expect(cacheHits).toBe(0);
 		expect(Array.from(flags.entries())).toMatchInlineSnapshot(`
 			[
 			  [
@@ -380,6 +388,8 @@ Third line`;
 
 	it("gradeDocument extracts document noul flags exceeding threshold", async () => {
 		const mockProvider: Provider = {
+			name: "jev",
+			model: "jev-1.13.0",
 			async createDecision() {
 				return {
 					answers: {
@@ -408,6 +418,90 @@ Third line`;
 			  "scores": {},
 			}
 		`);
+	});
+
+	it("gradeLines skips provider calls when lines hit cache", async () => {
+		const { mkdtemp, rm } = await import("node:fs/promises");
+		const { tmpdir } = await import("node:os");
+		const tempDir = await mkdtemp(join(tmpdir(), "grader-cache-test-"));
+
+		try {
+			let decisionCalls = 0;
+			const countingProvider: Provider = {
+				name: "jev",
+				model: "jev-1.13.0",
+				async createDecision(req) {
+					decisionCalls++;
+					const answers: Record<string, Answers> = {};
+					for (const id of Object.keys(req.questions)) {
+						answers[id] = { type: "noul", noul: id === "L0001" ? 0.95 : 0.1 };
+					}
+					return { answers };
+				},
+			};
+
+			const lines = [
+				{ lineNum: 1, text: "Empowering innovation" },
+				{ lineNum: 2, text: "Normal sentence here" },
+			];
+			const lineRules = {
+				banned_word: {
+					type: "noul" as const,
+					instructions: "Detect buzzwords",
+				},
+			};
+
+			const cacheManager1 = new LineCacheManager({
+				baseDir: tempDir,
+				provider: countingProvider.name,
+				model: countingProvider.model,
+			});
+
+			// Run 1: Cold cache -> provider called
+			const run1 = await gradeLines(
+				lines,
+				lineRules,
+				countingProvider,
+				cacheManager1,
+			);
+			expect(decisionCalls).toBe(1);
+			expect(run1.cacheHits).toBe(0);
+			expect(run1.flags.get(1)).toEqual(["banned_word"]);
+			expect(run1.flags.has(2)).toBe(false);
+
+			// Run 2: Hot cache -> 0 provider calls, exact same flags
+			const cacheManager2 = new LineCacheManager({
+				baseDir: tempDir,
+				provider: countingProvider.name,
+				model: countingProvider.model,
+			});
+			const run2 = await gradeLines(
+				lines,
+				lineRules,
+				countingProvider,
+				cacheManager2,
+			);
+			expect(decisionCalls).toBe(1); // Still 1!
+			expect(run2.cacheHits).toBe(2);
+			expect(run2.flags.get(1)).toEqual(["banned_word"]);
+			expect(run2.flags.has(2)).toBe(false);
+
+			// Run 3: 1 line edited -> only edited line evaluated
+			const editedLines = [
+				{ lineNum: 1, text: "Empowering innovation" }, // cached
+				{ lineNum: 2, text: "A brand new edited line" }, // uncached
+			];
+			const run3 = await gradeLines(
+				editedLines,
+				lineRules,
+				countingProvider,
+				cacheManager2,
+			);
+			expect(decisionCalls).toBe(2); // 1 extra call for the 1 edited line
+			expect(run3.cacheHits).toBe(1);
+		} finally {
+			await rm(tempDir, { recursive: true, force: true });
+		}
 	});
 
 	it("loadRules loads and splits markdown rule files", async () => {

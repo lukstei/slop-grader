@@ -380,16 +380,18 @@ describe("report", () => {
 			lines: 12,
 			questions: 61,
 			apiCalls: 6,
+			apiQuestions: 61,
 		};
 		expect(formatStats(stats)).toMatchInlineSnapshot(`
 			[
 			  "
 			## Stats
 			",
-			  "Rules applied:    6 (5 line, 1 document)",
-			  "Lines evaluated:  12",
-			  "Questions asked:  61",
-			  "API calls:        6",
+			  "Rules applied:                6 (5 line, 1 document)",
+			  "Lines evaluated:              12",
+			  "Questions asked:              61",
+			  "API calls:                    6",
+			  "Questions evaluated via API:  61",
 			]
 		`);
 	});
@@ -402,16 +404,44 @@ describe("report", () => {
 			lines: 10,
 			questions: 50,
 			apiCalls: 5,
+			apiQuestions: 50,
 		};
 		expect(formatStats(stats)).toMatchInlineSnapshot(`
 			[
 			  "
 			## Stats
 			",
-			  "Rules applied:    5",
-			  "Lines evaluated:  10",
-			  "Questions asked:  50",
-			  "API calls:        5",
+			  "Rules applied:                5",
+			  "Lines evaluated:              10",
+			  "Questions asked:              50",
+			  "API calls:                    5",
+			  "Questions evaluated via API:  50",
+			]
+		`);
+	});
+
+	it("formatStats includes cacheHits when defined", () => {
+		const stats = {
+			rules: 5,
+			lineRules: 5,
+			docRules: 0,
+			lines: 10,
+			questions: 50,
+			apiCalls: 1,
+			apiQuestions: 42,
+			cacheHits: 8,
+		};
+		expect(formatStats(stats)).toMatchInlineSnapshot(`
+			[
+			  "
+			## Stats
+			",
+			  "Rules applied:                5",
+			  "Lines evaluated:              10",
+			  "Questions asked:              50",
+			  "API calls:                    1",
+			  "Questions evaluated via API:  42",
+			  "Cache hits:                   8",
 			]
 		`);
 	});
@@ -428,6 +458,7 @@ describe("report", () => {
 			lines: 1,
 			questions: 1,
 			apiCalls: 1,
+			apiQuestions: 1,
 		};
 
 		const jsonStr = formatJson(
@@ -448,6 +479,7 @@ describe("report", () => {
 			  ],
 			  "stats": {
 			    "apiCalls": 1,
+			    "apiQuestions": 1,
 			    "docRules": 0,
 			    "lineRules": 1,
 			    "lines": 1,

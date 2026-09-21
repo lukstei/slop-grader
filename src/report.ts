@@ -125,12 +125,21 @@ export function formatStats(stats: Stats): string[] {
 		stats.docRules > 0 && stats.lineRules > 0
 			? ` (${stats.lineRules} line, ${stats.docRules} document)`
 			: "";
+	const rows: Array<[string, string]> = [
+		["Rules applied:", `${stats.rules}${breakdown}`],
+		["Lines evaluated:", `${stats.lines}`],
+		["Questions asked:", `${stats.questions}`],
+		["API calls:", `${stats.apiCalls}`],
+		["Questions evaluated via API:", `${stats.apiQuestions}`],
+	];
+	if (stats.cacheHits !== undefined) {
+		rows.push(["Cache hits:", `${stats.cacheHits}`]);
+	}
+
+	const maxLabel = Math.max(...rows.map(([label]) => label.length));
 	return [
 		"\n## Stats\n",
-		`Rules applied:    ${stats.rules}${breakdown}`,
-		`Lines evaluated:  ${stats.lines}`,
-		`Questions asked:  ${stats.questions}`,
-		`API calls:        ${stats.apiCalls}`,
+		...rows.map(([label, val]) => `${label.padEnd(maxLabel)}  ${val}`),
 	];
 }
 

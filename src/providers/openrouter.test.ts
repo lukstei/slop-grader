@@ -24,7 +24,7 @@ describe("OpenRouterProvider", () => {
 		);
 	});
 
-	it("sends request with default model ~typesafe/jev-latest", async () => {
+	it("sends request with default model typesafe/jev-1.13", async () => {
 		let capturedUrl = "";
 		let capturedInit: RequestInit | undefined;
 
@@ -33,7 +33,6 @@ describe("OpenRouterProvider", () => {
 			vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
 				capturedUrl = url.toString();
 				capturedInit = init;
-
 				return new Response(
 					JSON.stringify({
 						answers: {
@@ -43,10 +42,7 @@ describe("OpenRouterProvider", () => {
 							},
 						},
 					}),
-					{
-						status: 200,
-						headers: { "Content-Type": "application/json" },
-					},
+					{ status: 200, headers: { "Content-Type": "application/json" } },
 				);
 			}),
 		);
@@ -68,7 +64,7 @@ describe("OpenRouterProvider", () => {
 		);
 		expect(JSON.parse(capturedInit?.body as string)).toMatchInlineSnapshot(`
 			{
-			  "model": "~typesafe/jev-latest",
+			  "model": "typesafe/jev-1.13",
 			  "questions": {
 			    "is_slop": {
 			      "instructions": "Is this slop?",

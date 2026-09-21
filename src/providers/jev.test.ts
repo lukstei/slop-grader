@@ -89,7 +89,7 @@ describe("JevProvider", () => {
 
 		expect(capturedRequest).toMatchInlineSnapshot(`
 			{
-			  "model": "jev-latest",
+			  "model": "jev-1.13.0",
 			  "questions": {
 			    "is_slop": {
 			      "criteria": {

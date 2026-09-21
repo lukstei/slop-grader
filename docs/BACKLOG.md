@@ -69,8 +69,8 @@
 - **Objective:** Batch multiple rules alongside lines in the same API request up to the token budget, reducing API round-trips and avoiding duplicate state token transmission.
 - **Agent Triage:** Pack `(line, rule)` question pairs into single requests. Track combined state and question tokens dynamically with `tokenx`, and ensure question IDs (e.g. `L0001_ruleId`) map cleanly back to line numbers and rule keys.
 
-### [ ] 13. Incremental Line-Level Caching
-- **Current State:** Every execution evaluates all lines from scratch. Re-running `slop-grader` after editing 1–2 lines re-evaluates the entire document against all rules.
+### [x] 13. Incremental Line-Level Caching
+- **Current State:** Line evaluations are cached deterministically by content hash in the OS-recommended cache directory (`<cacheDir>/v1/<provider>/<safeModel>/<ruleId>.json.gz`) with LRU eviction and atomic gzip persistence. Unchanged lines bypass API calls.
 - **Objective:** Cache line evaluation results by content and rule hash, skipping re-evaluation for unchanged lines during iterative editing loops.
 - **Agent Triage:** Key cache entries on `hash(line_text, rule_definition)`. Store locally in `.slop-grader/cache` or user cache dir, with a `--no-cache` flag to bypass.
 
@@ -98,3 +98,29 @@
 - **Current State:** Repository dependencies in `package.json` and GitHub Actions in `.github/workflows/` are tracked and bumped manually. No Renovate configuration exists in the repo.
 - **Objective:** Add a Renovate configuration (`renovate.json` or `.github/renovate.json5`) to automate npm and GitHub Actions dependency updates.
 - **Agent Triage:** Group non-breaking devDependencies and CI action bumps to limit PR volume. Ensure Renovate PRs trigger `npm run verify` in CI.
+
+### [ ] 19. Limit API Request Concurrency
+- **Current State:** `gradeLines` in `src/grader.ts` fires all rules and line batches concurrently with unconstrained `Promise.all` calls. Evaluating large documents or multiple rulesets can exhaust connections or trigger provider HTTP 429 rate limits.
+- **Objective:** Limit concurrent API requests across line batches and rules to a configurable ceiling.
+- **Agent Triage:** Gate `provider.createDecision` calls through a queue or semaphore with a safe default limit (such as 5) and expose a `--concurrency` CLI flag.
+
+### [ ] 20. Context Window Padding for Line Batches
+- **Current State:** `buildBatchRequest` in `src/grader.ts` populates `state` strictly with the active lines assigned to that batch. Boundary lines (first and last lines of each batch) lack preceding or succeeding lines, starving rules like `synonym_cycling` or ambiguous pronoun checks of surrounding context.
+- **Objective:** Include `CONTEXT_LINES` (e.g. ±5 lines) of surrounding document lines in the request `state` as non-evaluated context, generating questions only for the lines targeted by that batch.
+- **Agent Triage:** Pass full document lines to batch building so context padding slices cleanly. Ensure question generation remains restricted strictly to target evaluation lines. Account for context token overhead in `batchLines` budget calculations.
+
+### [ ] 21. Context-Coupled Cache Invalidation
+- **Current State:** `hashLine` in `src/cache.ts` and `prefilterJobs` in `src/grader.ts` cache scores strictly per individual line hash. If a line changes, only that exact line is treated as uncached, leaving neighboring cached lines with stale scores even when their evaluation depends on the modified context.
+- **Objective:** Couple cache invalidation to line neighborhood: when a line changes, invalidate and re-evaluate cached scores for all lines within `±CONTEXT_LINES` (e.g. ±5 lines) of the change.
+- **Agent Triage:** Expand the uncached line set by marking index neighbors of any modified line within `CONTEXT_LINES` radius before batching. Verify that cache hits correctly retain untouched neighborhoods while invalidating affected boundaries.
+
+### [ ] 22. Add `-v` Mode for Debug Logs
+- **Current State:** `-v` maps to `--version` in `src/main.ts`. A `--debug` (`-d`) flag logs raw provider JSON payloads to stderr, but the CLI lacks a `-v`/`--verbose` flag for operational debug logs (e.g. batch progress, cache hit/miss counts, token estimates, and rule timings).
+- **Objective:** Add a `-v` / `--verbose` CLI flag that outputs readable debug logs to stderr during execution.
+- **Agent Triage:** Reassign `--version` to `-V` so `-v` is free for `--verbose`. Send logs to stderr to avoid corrupting stdout when piped or formatted with `--json`. Keep log lines concise and prefix them consistently.
+
+### [ ] 23. Show API Costs in `--stats`
+- **Current State:** `formatStats` in `src/report.ts` and `Stats` in `src/types.ts` track rule counts, lines evaluated, API calls, and cache hits, but do not record token usage or API expenses. The provider abstraction in `src/provider.ts` discards response usage metadata, leaving users with no cost visibility per grading run.
+- **Objective:** Display estimated or reported API costs (and token counts) in the `--stats` summary and JSON output.
+- **Agent Triage:** Capture usage metadata (tokens or billed cost) from provider responses when available, falling back to local token estimation via `tokenx` with model pricing tables. Format costs cleanly (e.g. `API cost: $0.0042`) in `formatStats` and include raw numeric fields in `--json`.
+

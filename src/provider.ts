@@ -6,6 +6,8 @@ import { OpenRouterProvider } from "./providers/openrouter.ts";
 export type { Answers, DecisionsRequest };
 
 export interface Provider {
+	readonly name: ProviderName;
+	readonly model: string;
 	createDecision(
 		req: DecisionsRequest,
 	): Promise<{ answers: Record<string, Answers> }>;

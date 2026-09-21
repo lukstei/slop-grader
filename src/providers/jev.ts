@@ -9,14 +9,15 @@ import type { ScoreCriteria, Questions as TSQuestions } from "@typesafe-ai/sdk";
 import { noul, score, TypeSafeClient } from "@typesafe-ai/sdk";
 import type { Provider } from "../provider.ts";
 
-const DEFAULT_MODEL = "jev-latest";
+const DEFAULT_MODEL = "jev-1.13.0";
 
 export class JevProvider implements Provider {
+	readonly name = "jev" as const;
+	readonly model: string;
 	readonly #client: TypeSafeClient;
-	readonly #model: string;
 
 	constructor(client?: TypeSafeClient, model?: string) {
-		this.#model = model ?? DEFAULT_MODEL;
+		this.model = model ?? DEFAULT_MODEL;
 		if (client) {
 			this.#client = client;
 			return;
@@ -35,7 +36,7 @@ export class JevProvider implements Provider {
 		}
 
 		const result = await this.#client.systemOne({
-			model: this.#model,
+			model: this.model,
 			state: req.state,
 			questions,
 		});

@@ -4,6 +4,7 @@ import { basename, resolve } from "node:path";
 import type { Answers } from "@openrouter/sdk/models/decisionsresponse";
 import type { DecisionsScoreAnswer } from "@openrouter/sdk/models/decisionsscoreanswer";
 import { estimateTokenCount } from "tokenx";
+import { hashLine, type LineCacheManager } from "./cache.ts";
 import { parseMarkdownRules } from "./markdown/rules.ts";
 import type { Provider } from "./provider.ts";
 import type {
@@ -19,7 +20,6 @@ import type {
 
 export type { RuleSet, RulesetInfo, RulesetScope };
 
-const MODEL = "~typesafe/jev-latest";
 const THRESHOLD = 0.8;
 const MAX_BATCH_SIZE = 255;
 const TARGET_BATCH_TOKENS = Math.floor(64_000 * 0.8);
@@ -231,29 +231,137 @@ export async function loadRules(paths: string[]): Promise<RuleSet> {
 	return splitRules(rulesets.map((r) => r.rules));
 }
 
+type RuleJob = {
+	ruleId: string;
+	qDef: NoulQuestion;
+	answers: Record<string, Answers>;
+	uncachedLines: Line[];
+};
+
+function indexLines(lines: Line[]): Map<string, number[]> {
+	const lineHashes = new Map<string, number[]>();
+	for (const line of lines) {
+		const hash = hashLine(line.text);
+		const existing = lineHashes.get(hash);
+		if (existing) {
+			existing.push(line.lineNum);
+		} else {
+			lineHashes.set(hash, [line.lineNum]);
+		}
+	}
+	return lineHashes;
+}
+
+async function prefilterJobs(
+	questions: Record<string, NoulQuestion>,
+	lines: Line[],
+	lineHashes: Map<string, number[]>,
+	cacheManager?: LineCacheManager,
+): Promise<{ jobs: RuleJob[]; cacheHits: number }> {
+	let cacheHits = 0;
+	const jobs: RuleJob[] = [];
+
+	for (const [ruleId, qDef] of Object.entries(questions)) {
+		if (cacheManager) {
+			const { cachedScores, uncachedLines } = await cacheManager.prefilterRule(
+				ruleId,
+				qDef,
+				lines,
+				lineHashes,
+			);
+			cacheHits += cachedScores.size;
+			const answers: Record<string, Answers> = {};
+			for (const [lineNum, score] of cachedScores) {
+				answers[lineMarker(lineNum)] = { type: "noul", noul: score };
+			}
+			jobs.push({ ruleId, qDef, answers, uncachedLines });
+		} else {
+			jobs.push({ ruleId, qDef, answers: {}, uncachedLines: lines });
+		}
+	}
+
+	return { jobs, cacheHits };
+}
+
+async function evaluateJobs(
+	dirtyJobs: RuleJob[],
+	provider: Provider,
+): Promise<void> {
+	await Promise.all(
+		dirtyJobs.map(async (job) => {
+			const batches = batchLines(job.uncachedLines, job.qDef);
+			await Promise.all(
+				batches.map(async (batch) => {
+					const { state, batchQuestions } = buildBatchRequest(batch, job.qDef);
+					const decision = await provider.createDecision({
+						model: provider.model,
+						state,
+						questions: batchQuestions,
+					});
+					for (const [id, answer] of Object.entries(decision.answers)) {
+						job.answers[id] = answer;
+					}
+				}),
+			);
+		}),
+	);
+}
+
+/**
+ * Saves evaluated line scores back to rule caches. Saves run sequentially to avoid
+ * concurrently inflating multiple 25,000-entry payloads in memory.
+ */
+async function writebackCaches(
+	dirtyJobs: RuleJob[],
+	cacheManager: LineCacheManager,
+): Promise<void> {
+	for (const job of dirtyJobs) {
+		const freshScores: Array<[string, number]> = [];
+		for (const line of job.uncachedLines) {
+			const id = lineMarker(line.lineNum);
+			const answer = job.answers[id];
+			if (answer?.type === "noul" && typeof answer.noul === "number") {
+				freshScores.push([hashLine(line.text), answer.noul]);
+			}
+		}
+		if (freshScores.length > 0) {
+			await cacheManager.saveRuleScores(job.ruleId, job.qDef, freshScores);
+		}
+	}
+}
+
 export async function gradeLines(
 	lines: Line[],
 	questions: Record<string, NoulQuestion>,
 	provider: Provider,
-): Promise<FlagMap> {
-	if (!Object.keys(questions).length) return new Map();
+	cacheManager?: LineCacheManager,
+): Promise<{ flags: FlagMap; cacheHits: number }> {
+	if (!lines.length || !Object.keys(questions).length) {
+		return { flags: new Map(), cacheHits: 0 };
+	}
 
-	const results = await Promise.all(
-		Object.entries(questions).flatMap(([qKey, qDef]) => {
-			const batches = batchLines(lines, qDef);
-			return batches.map(async (batch) => {
-				const { state, batchQuestions } = buildBatchRequest(batch, qDef);
-				const decision = await provider.createDecision({
-					model: MODEL,
-					state,
-					questions: batchQuestions,
-				});
-				return { qKey, answers: decision.answers };
-			});
-		}),
+	const lineHashes = indexLines(lines);
+	const { jobs, cacheHits } = await prefilterJobs(
+		questions,
+		lines,
+		lineHashes,
+		cacheManager,
 	);
 
-	return extractLineFlags(results);
+	const dirtyJobs = jobs.filter((j) => j.uncachedLines.length > 0);
+	if (dirtyJobs.length > 0) {
+		await evaluateJobs(dirtyJobs, provider);
+		if (cacheManager) {
+			await writebackCaches(dirtyJobs, cacheManager);
+		}
+	}
+
+	const results = jobs.map(({ ruleId, answers }) => ({
+		qKey: ruleId,
+		answers,
+	}));
+
+	return { flags: extractLineFlags(results), cacheHits };
 }
 
 export async function gradeDocument(
@@ -266,7 +374,7 @@ export async function gradeDocument(
 }> {
 	if (!Object.keys(questions).length) return { scores: {}, flags: [] };
 	const decision = await provider.createDecision({
-		model: MODEL,
+		model: provider.model,
 		state: text,
 		questions,
 	});

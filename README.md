@@ -58,6 +58,7 @@ Pass the output to your AI agent:
 ## Features
 
 - **[Parallel exhaustive grading](#how-it-works):** Checks every rule against every line independently. No skimming.
+- **[Incremental line caching](docs/CACHE.md):** Re-evaluates only edited lines; unchanged text resolves from cache with zero API calls. Toggle with `--no-cache`.
 - **System One efficiency:** Typed probabilities via [Jev](https://typesafe.ai) without text generation. Thousands of checks for cents.
 - **Dynamic batching:** Groups lines to token limits to minimize API calls. See [evaluation details](#faq).
 - **[Line and document scope](#rulesets):** Flags line patterns and rates whole documents on qualitative rubrics.
@@ -80,6 +81,21 @@ Document rules run in a single request across the entire text.
 </details>
 
 <details>
+<summary><strong>How does incremental caching work?</strong></summary>
+
+Line evaluations are cached by the hash of the line's content and the rule's criteria.
+
+When you edit a document and run `slop-grader` again:
+1. Every line is matched against the local cache for each rule.
+2. Unchanged lines resolve immediately from the cache with zero API calls and zero cost.
+3. Only new or modified lines are batched and sent to the model.
+4. If a rule's instructions or criteria change, its cache invalidates automatically.
+
+This makes repeated runs on large files or during editing loops nearly instantaneous. Pass `--no-cache` to bypass the cache, or `--cache-dir <dir>` to customize its location. See [`docs/CACHE.md`](docs/CACHE.md) for technical details on storage layout, hashing, and eviction.
+
+</details>
+
+<details>
 <summary><strong>How is this different from using an LLM to check text?</strong></summary>
 
 Standard generative LLMs evaluate an entire document in a single prompt against a list of rules. On longer texts, they skip lines, miss rules, and report wrong line numbers.
@@ -98,19 +114,21 @@ Cost scales with the number of rules and non-empty lines.
 Checking [`examples/slop.md`](examples/slop.md) (16 text lines) against 53 rules costs roughly \$0.0053 (half a cent):
 
 ```
-Rules applied:    53 (48 line, 5 document)
-Lines evaluated:  16
-Questions asked:  773
-API calls:        49
+Rules applied:                53 (48 line, 5 document)
+Lines evaluated:              16
+Questions asked:              773
+API calls:                    49
+Questions evaluated via API:  773
 ```
 
 Checking a 2,100-word article (300 text lines) against 42 rules costs roughly \$0.076 (7.6 cents):
 
 ```
-Rules applied:    42
-Lines evaluated:  300
-Questions asked:  12600
-API calls:        84
+Rules applied:                42
+Lines evaluated:              300
+Questions asked:              12600
+API calls:                    84
+Questions evaluated via API:  12600
 ```
 
 Because Jev evaluates semantic probabilities instead of generating text tokens, running thousands of parallel checks costs a fraction of standard LLM generation.
@@ -375,7 +393,7 @@ Custom JSON rulesets (`-r ./my-rules.json`) are also supported.
 ## CLI Reference
 
 ```sh
-npx @lukstei/slop-grader@latest [-c|--check] [-l|--list-rulesets] -r <ruleset> [-r <ruleset> ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [-h|--help] [-v|--version] [file]
+npx @lukstei/slop-grader@latest [-c|--check] [-l|--list-rulesets] -r <ruleset> [-r <ruleset> ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]
 ```
 
 ### Flags
@@ -386,10 +404,12 @@ npx @lukstei/slop-grader@latest [-c|--check] [-l|--list-rulesets] -r <ruleset> [
 | `--check` | `-c` | Validate ruleset syntax without grading or calling the API. |
 | `--rules <name\|path>` | `-r` | Ruleset to apply. Repeatable. Accepts built-in names, Markdown (`.md`) files, or JSON file paths. |
 | `--provider <jev\|openrouter>` | `-p` | Override the AI provider. |
-| `--model <model>` | `-m` | Override the default model (`jev-latest` for `jev`, `~typesafe/jev-latest` for `openrouter`). |
+| `--model <model>` | `-m` | Override the default model (`jev-1.13.0` for `jev`, `typesafe/jev-1.13` for `openrouter`). |
 | `--json` | `-j` | Emit structured JSON instead of the human-readable report. |
-| `--stats` | `-s` | Print execution statistics (rules applied, lines evaluated, questions asked, API calls). |
+| `--stats` | `-s` | Print execution statistics (rules applied, lines evaluated, questions asked, API calls, questions evaluated via API, cache hits). |
 | `--debug` | `-d` | Log all API calls (timing, request, response) as JSON to stderr. |
+| `--no-cache` | | Disable line-level caching (evaluates all lines from scratch). |
+| `--cache-dir <dir>` | | Override the cache directory (defaults to OS cache directory). |
 | `--help` | `-h` | Display usage information. |
 | `--version` | `-v` | Display version number. |
 
@@ -406,7 +426,7 @@ Provider resolution order:
 2. `TYPESAFE_PROVIDER` environment variable
 3. Auto-detected from keys (`TYPESAFE_API_KEY` selects `jev`; `OPENROUTER_API_KEY` selects `openrouter`)
 
-Grading runs on `jev-latest` (TypeSafe) or `~typesafe/jev-latest` (OpenRouter) by default, overridable via `--model` (`-m`).
+Grading runs on `jev-1.13.0` (TypeSafe) or `typesafe/jev-1.13` (OpenRouter) by default, overridable via `--model` (`-m`).
 
 ## Output Formats
 
