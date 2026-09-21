@@ -48,3 +48,9 @@
 - **Current State:** Reports are emitted only to stdout/stderr as plain text or raw JSON. There is no built-in formatter or adapter for PR contexts (such as GitHub PR inline review comments, check annotations, or summary bodies).
 - **Objective:** Support generating structured PR feedback from evaluation results, including inline comments on changed lines, score summaries in PR descriptions, and check-run annotations.
 - **Agent Triage:** Map file-level line violations directly to git diff hunk line numbers to prevent out-of-diff comment errors. Design a compact Markdown template for sticky PR summary comments with pass/fail badges.
+
+### [ ] 9. Copy Output to Clipboard with Reduced Terminal Output
+- **Current State:** Output writes directly to stdout/stderr as full text or JSON. The CLI lacks an option to write reports to the system clipboard or quiet terminal output during copy operations.
+- **Objective:** Add a CLI flag (e.g. `--copy` or `--clipboard`) that copies the generated report to the clipboard and prints a minimal summary to the terminal.
+- **Agent Triage:** Handle cross-platform clipboard commands (`pbcopy`, `wl-copy`/`xclip`, PowerShell) or an npm package without native build dependencies. Confirm if the clipboard gets the full report while the terminal shows a one-line summary.
+
