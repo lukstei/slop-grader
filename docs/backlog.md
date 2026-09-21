@@ -64,5 +64,22 @@
 - **Objective:** Expand the built-in library with rulesets targeted at daily developer workflows, including git commits, pull requests, RFCs, and release notes.
 - **Agent Triage:** Prioritize developer-facing writing where clear style criteria already exist (e.g. Conventional Commits, ADR templates). Keep rulesets orthogonal to prevent conflicting judgments when combining flags.
 
+### [ ] 12. Multi-Rule Batching Across Lines
+- **Current State:** `gradeLines` in `src/grader.ts` iterates over rules independently. For each rule, it serializes and transmits the document lines in isolated requests, re-sending identical state text dozens of times and underutilizing Jev's 51.2k token request budget.
+- **Objective:** Batch multiple rules alongside lines in the same API request up to the token budget, reducing API round-trips and avoiding duplicate state token transmission.
+- **Agent Triage:** Pack `(line, rule)` question pairs into single requests. Track combined state and question tokens dynamically with `tokenx`, and ensure question IDs (e.g. `L0001_ruleId`) map cleanly back to line numbers and rule keys.
 
+### [ ] 13. Incremental Line-Level Caching
+- **Current State:** Every execution evaluates all lines from scratch. Re-running `slop-grader` after editing 1–2 lines re-evaluates the entire document against all rules.
+- **Objective:** Cache line evaluation results by content and rule hash, skipping re-evaluation for unchanged lines during iterative editing loops.
+- **Agent Triage:** Key cache entries on `hash(line_text, rule_definition)`. Store locally in `.slop-grader/cache` or user cache dir, with a `--no-cache` flag to bypass.
 
+### [ ] 14. Syntactic Pre-filtering for Lexical Rules
+- **Current State:** All line rules are evaluated through semantic API calls for every line, even when rules have strict syntactic prerequisites (e.g. `colon_reveal` requiring `:`, `em_dash` requiring `—`, or fixed keyword checks).
+- **Objective:** Allow rules to declare fast syntactic pre-filters (e.g. substring or regex guards) in Markdown/JSON rulesets that skip API evaluation when prerequisites are unmet.
+- **Agent Triage:** Evaluate pre-filters locally in memory before building API questions. Assign an automatic `0.0` score when pre-conditions fail, keeping API calls strictly for lines matching lexical triggers.
+
+### [ ] 15. Structured Rule Deduplication in Request State
+- **Current State:** `buildBatchRequest` duplicates the full rule instructions and criteria into every individual line's question object, inflating request payloads with redundant schema definitions across hundreds of lines.
+- **Objective:** Pass rule definitions once within the structured `state` payload and have line questions reference them by identifier rather than repeating full criteria objects.
+- **Agent Triage:** Jev supports structured object state and backtick references in questions. Verify that referential prompts maintain classification accuracy and confidence calibration compared to inlined criteria.

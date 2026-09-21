@@ -434,6 +434,10 @@ npm run verify   # Run typecheck, biome lint, and tests
 npm run build    # Build
 ```
 
+## Changelog
+
+See [`docs/CHANGELOG.md`](docs/CHANGELOG.md) for release history and notable changes.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for contribution guidelines, development setup, and coding best practices.

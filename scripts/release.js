@@ -10,7 +10,8 @@ if (!BUMP_TYPES.includes(bump)) {
 }
 
 function run(cmd, options = {}) {
-	return execSync(cmd, { stdio: "inherit", ...options });
+	console.log(`$ ${cmd}`);
+	return execSync(cmd, { stdio: "ignore", ...options });
 }
 
 function capture(cmd) {
@@ -72,10 +73,34 @@ try {
 // 3. Pull the release commit
 console.log("→ Post-release: pulling release commit...");
 try {
-	run("git pull --ff-only");
+	run("git pull --ff-only --tags");
 } catch {
 	console.error("\nFailed to pull release commit from origin/main.");
 	process.exit(1);
+}
+
+// 4. Update changelog with agy, then commit and push
+console.log("→ Post-release: updating changelog with agy...");
+const currentTag = capture("git describe --tags --abbrev=0");
+const previousTag = capture(`git describe --tags --abbrev=0 ${currentTag}^`);
+const changelogPrompt = `Add all items between tag ${previousTag} and ${currentTag} to docs/CHANGELOG.md. Follow the existing format (1 line per change, grouped by features and bugfixes, source is the commit log between ${previousTag}..${currentTag}, skip minor changes).`;
+
+try {
+	run(`agy -p ${JSON.stringify(changelogPrompt)}`);
+} catch {
+	abort("Failed to update changelog via agy.");
+}
+
+const changelogStatus = capture("git status --porcelain docs/CHANGELOG.md");
+if (changelogStatus.length > 0) {
+	console.log("→ Post-release: committing and pushing changelog...");
+	try {
+		run("git add docs/CHANGELOG.md");
+		run(`git commit -m "docs(changelog): update for ${currentTag} [skip ci]"`);
+		run("git push origin main");
+	} catch {
+		abort("Failed to commit or push updated changelog.");
+	}
 }
 
 console.log(`\n✓ Successfully released ${bump} and synced local repository.`);
