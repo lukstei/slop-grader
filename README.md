@@ -9,6 +9,7 @@
 ![npm bundle size](https://img.shields.io/bundlephobia/min/%40lukstei%2Fslop-grader)
 
 Rule-based slop grader for text files, powered by [Jev](https://typesafe.ai).
+Runs every rule against every line in parallel. No skimming, no missed lines.
 
 ## How it works
 
