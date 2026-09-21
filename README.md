@@ -57,12 +57,12 @@ Pass the output to your AI agent:
 
 ## Features
 
-- **[Parallel exhaustive grading](#how-it-works):** Checks every rule against every line independently. No skimming.
-- **[Incremental line caching](docs/CACHE.md):** Re-evaluates only edited lines; unchanged text resolves from cache with zero API calls. Toggle with `--no-cache`.
+- **[Parallel exhaustive grading](#how-is-this-different-from-using-an-llm-to-check-text):** Checks every rule against every line independently. No skimming.
+- **[Incremental line caching](#how-does-incremental-caching-work):** Re-evaluates only edited lines; unchanged text resolves from cache with zero API calls. Toggle with `--no-cache`.
 - **System One efficiency:** Typed probabilities via [Jev](https://typesafe.ai) without text generation. Thousands of checks for cents.
 - **Dynamic batching:** Groups lines to token limits to minimize API calls. See [evaluation details](#faq).
 - **[Line and document scope](#rulesets):** Flags line patterns and rates whole documents on qualitative rubrics.
-- **Plain Markdown rulesets:** Write rules in [Markdown](docs/SYNTAX.md); validate offline with [`--check`](#flags).
+- **Plain Markdown rulesets:** Write rules in [Markdown](#custom-rulesets); validate offline with [`--check`](#flags).
 - **[Built-in rulesets](#built-in-rulesets):** Ready-to-use rules for AI writing patterns, document scores, tech docs, and grammar.
 - **Agent and CI ready:** [Terminal output](#human-readable-report) for [agent fix plans](examples/plan.md); [structured JSON](#json-report---json) for pipelines.
 - **[Multi-provider](#providers-and-environment-variables):** Works with TypeSafe AI and OpenRouter out of the box.
@@ -70,7 +70,7 @@ Pass the output to your AI agent:
 ## FAQ
 
 <details>
-<summary><strong>How does evaluation work?</strong></summary>
+<summary><a id="how-does-evaluation-work"></a><strong>How does evaluation work?</strong></summary>
 
 Evaluation separates line-level checks (spotting specific patterns or phrases) from document-level checks (evaluating tone or overall structure).
 
@@ -81,7 +81,7 @@ Document rules run in a single request across the entire text.
 </details>
 
 <details>
-<summary><strong>How does incremental caching work?</strong></summary>
+<summary><a id="how-does-incremental-caching-work"></a><strong>How does incremental caching work?</strong></summary>
 
 Line evaluations are cached by the hash of the line's content and the rule's criteria.
 
@@ -96,7 +96,7 @@ This makes repeated runs on large files or during editing loops nearly instantan
 </details>
 
 <details>
-<summary><strong>How is this different from using an LLM to check text?</strong></summary>
+<summary><a id="how-is-this-different-from-using-an-llm-to-check-text"></a><strong>How is this different from using an LLM to check text?</strong></summary>
 
 Standard generative LLMs evaluate an entire document in a single prompt against a list of rules. On longer texts, they skip lines, miss rules, and report wrong line numbers.
 
