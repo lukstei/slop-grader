@@ -5,6 +5,11 @@
 ### Features
 - Batch lines by token budget during evaluation to reduce API calls.
 
+## [0.2.5] - 2026-09-21
+
+### Features
+- Add incremental line-level evaluation caching.
+
 ## [0.2.3] - 2026-09-21
 
 ### Features

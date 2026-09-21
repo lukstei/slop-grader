@@ -1,4 +1,6 @@
 import { execSync } from "node:child_process";
+import { stdin as input, stdout as output } from "node:process";
+import * as readline from "node:readline/promises";
 import * as timers from "node:timers/promises";
 
 const BUMP_TYPES = ["patch", "minor", "major"];
@@ -83,24 +85,49 @@ try {
 console.log("→ Post-release: updating changelog with agy...");
 const currentTag = capture("git describe --tags --abbrev=0");
 const previousTag = capture(`git describe --tags --abbrev=0 ${currentTag}^`);
-const changelogPrompt = `Add all items between tag ${previousTag} and ${currentTag} to docs/CHANGELOG.md. Follow the existing format (1 line per change, grouped by features and bugfixes, source is the commit log between ${previousTag}..${currentTag}, skip minor changes).`;
+const commitLogs = capture(`git log ${previousTag}..${currentTag} --oneline`);
+
+const changelogPrompt = `Add entries for ${currentTag} to docs/CHANGELOG.md based on the commit log below.
+Follow the existing format in docs/CHANGELOG.md (1 line per change, grouped by Features and Bug Fixes, skip minor/release/chore changes).
+Only edit docs/CHANGELOG.md. Do not run commands or inspect other files.
+
+Commit log between ${previousTag}..${currentTag}:
+${commitLogs}`;
 
 try {
-	run(`agy -p ${JSON.stringify(changelogPrompt)}`);
+	run(
+		`agy --mode accept-edits --effort=low --add-dir "${process.cwd()}" -p ${JSON.stringify(changelogPrompt)}`,
+		{ stdio: "inherit" },
+	);
 } catch {
 	abort("Failed to update changelog via agy.");
 }
 
 const changelogStatus = capture("git status --porcelain docs/CHANGELOG.md");
 if (changelogStatus.length > 0) {
-	console.log("→ Post-release: committing and pushing changelog...");
-	try {
-		run("git add docs/CHANGELOG.md");
-		run(`git commit -m "docs(changelog): update for ${currentTag} [skip ci]"`);
-		run("git push origin main");
-	} catch {
-		abort("Failed to commit or push updated changelog.");
+	console.log("\n→ Changelog diff:");
+	run("git --no-pager diff HEAD docs/CHANGELOG.md", { stdio: "inherit" });
+
+	const rl = readline.createInterface({ input, output });
+	const answer = await rl.question("\nCommit and push changelog? [y/N] ");
+	rl.close();
+
+	if (answer.trim().toLowerCase() !== "y") {
+		console.log("Skipping changelog commit and push.");
+	} else {
+		console.log("→ Post-release: committing and pushing changelog...");
+		try {
+			run("git add docs/CHANGELOG.md");
+			run(
+				`git commit -m "docs(changelog): update for ${currentTag} [skip ci]"`,
+			);
+			run("git push origin main");
+		} catch {
+			abort("Failed to commit or push updated changelog.");
+		}
 	}
+} else {
+	console.log("No changes made to docs/CHANGELOG.md.");
 }
 
 console.log(`\n✓ Successfully released ${bump} and synced local repository.`);
