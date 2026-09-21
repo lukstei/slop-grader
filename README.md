@@ -42,6 +42,27 @@ Pass the output to your AI agent:
   ```
 - After your review the plan is applied to produce an [improved document](examples/slop-improved.md).
 
+<details>
+<summary><strong>FAQ</strong></summary>
+
+### How does evaluation work?
+
+Evaluation separates line-level checks (spotting specific patterns or phrases) from document-level checks (evaluating tone or overall structure).
+
+Documents have hundreds of lines, but the number of rules is fixed. Sending one API request per line would mean hundreds of calls. Instead, `slop-grader` groups lines into batches of 255 and evaluates each rule across the batch in a single call. A 300-line document with 5 rules runs in 10 parallel requests.
+
+Document rules run in a single request across the entire text.
+
+### How is this different from using an LLM to check text?
+
+Standard generative LLMs evaluate an entire document in a single prompt against a list of rules. On longer texts, they skip lines, miss rules, and report wrong line numbers.
+
+Running a separate check for every line and rule with a generative LLM is impractical. A 300-line draft tested against 10 rules would require 3,000 text-generation requests, which is slow and expensive.
+
+`slop-grader` uses a System One model ([Jev](https://typesafe.ai)). System One models answer discrete semantic questions with typed probabilities without generating text. Because these judgments return numbers instead of prose tokens, `slop-grader` can test every line against every rule separately and in parallel.
+
+</details>
+
 ## Quick Start
 
 ### Requirements
@@ -321,20 +342,6 @@ npx @lukstei/slop-grader@latest -r no-ai-slop -r article-scores --json --stats m
 ```
 
 `violations.lines` and `violations.document` are empty when the file is clean. Useful for CI pipelines and editor integrations.
-
-## How Evaluation Works
-
-Evaluation separates line-level checks (spotting specific patterns or phrases) from document-level checks (evaluating tone or overall structure).
-
-### Batching by rule instead of line
-
-Documents have hundreds of lines, but the amount of rules is fixed.
-
-Sending one API request per line would mean hundreds of calls to the AI. A 300-line document with 5 rules would take 300 requests.
-
-Instead, `slop-grader` groups lines into batches of 255 and evaluates each rule across the entire batch in a single call. That same 300-line document runs in just 10 parallel requests.
-
-Document rules run in a single request across the entire text.
 
 ## Development
 
