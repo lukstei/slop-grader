@@ -37,3 +37,17 @@ export type Stats = {
 	questions: number;
 	apiCalls: number;
 };
+
+export type RulesetScope = "line" | "document" | "mixed";
+
+export type RulesetInfo = {
+	name: string;
+	path: string;
+	description: string;
+	scope: RulesetScope;
+	rulesCount: number;
+	lineRulesCount: number;
+	docRulesCount: number;
+	lineRules: string[];
+	docRules: string[];
+};

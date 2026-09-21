@@ -25,7 +25,7 @@ function parseScopeHeader(text: string): "line" | "document" | null {
 export function parseMarkdownRules(
 	content: string,
 	filePath?: string,
-): Record<string, Rule> {
+): { description: string; rules: Record<string, Rule> } {
 	const fileContext = filePath ? ` in "${filePath}"` : "";
 	assert(
 		content.trim().length > 0,
@@ -41,6 +41,7 @@ export function parseMarkdownRules(
 		bodyNodes: MarkdownNode[];
 	};
 
+	const preambleNodes: MarkdownNode[] = [];
 	const ruleSections: RuleSection[] = [];
 	const seenScopes = new Set<"line" | "document">();
 	let currentScope: "line" | "document" | null = null;
@@ -125,6 +126,11 @@ export function parseMarkdownRules(
 				currentRule.bodyNodes.push(node);
 				continue;
 			}
+		}
+
+		if (currentScope === null) {
+			preambleNodes.push(node);
+			continue;
 		}
 
 		if (currentRule) {
@@ -254,5 +260,11 @@ export function parseMarkdownRules(
 		}
 	}
 
-	return rules;
+	const description = preambleNodes
+		.map(getInnerText)
+		.map((s) => s.trim())
+		.filter((s) => s.length > 0)
+		.join("\n\n");
+
+	return { description, rules };
 }

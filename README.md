@@ -110,6 +110,25 @@ npx @lukstei/slop-grader@latest -r no-ai-slop -r article-scores my-draft.md
 
 ### Built-in rulesets
 
+List built-in rulesets directly with `--list-rulesets` (or `-l`):
+
+```sh
+npx @lukstei/slop-grader@latest --list-rulesets
+# or with structured JSON including rule IDs:
+npx @lukstei/slop-grader@latest -l --json
+```
+
+Displays each ruleset's scope (`line`, `document`, or `mixed`), rule count, and description:
+
+```text
+NAME             SCOPE     RULES  DESCRIPTION
+article-scores   document      8  Document-level quality scores: engagement, narrative arc, ...
+grammar-english  line         21  English grammar and style rules: spelling and confused words, ...
+grammar-german   line         13  Deutsche Grammatik-, Rechtschreib- und Zeichensetzungsregeln: ...
+no-ai-slop       line         21  Line-level rules to detect AI slop patterns: banned buzzwords, ...
+tech-docs        mixed        11  Technical documentation rules: structure, task orientation, ...
+```
+
 Pass built-in rulesets by name (`-r article-scores`):
 
 | Ruleset | What it checks |
@@ -147,6 +166,14 @@ Rate the narrative arc of the document.
 - Clear progression — each section sets up the next
 - Tight arc — the ending pays off the opening
 ```
+
+#### Keep rules granular
+
+Keep each rule focused on a single pattern rather than combining multiple checks into one broad rule:
+
+- **Actionable output:** When a line is flagged, the report prints the rule ID. A granular ID (e.g. `compound_spacing` instead of a generic `spelling`) shows immediately what failed without guessing which sub-clause triggered.
+- **Evaluator accuracy:** Evaluator models score binary criteria far more reliably on single conditions. Bundling typos, word choice, and punctuation into one prompt degrades precision.
+- **Isolated tuning:** You can refine criteria or add edge-case examples to a specific rule without regressing unrelated checks.
 
 #### Inspirations for rulesets
 
@@ -297,13 +324,14 @@ Custom JSON rulesets (`-r ./my-rules.json`) are also supported.
 ## CLI Reference
 
 ```sh
-npx @lukstei/slop-grader@latest [-c|--check] -r <ruleset> [-r <ruleset> ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [-h|--help] [-v|--version] [file]
+npx @lukstei/slop-grader@latest [-c|--check] [-l|--list-rulesets] -r <ruleset> [-r <ruleset> ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [-h|--help] [-v|--version] [file]
 ```
 
 ### Flags
 
 | Flag | Short | Description |
 |---|---|---|
+| `--list-rulesets` | `-l` | List built-in rulesets and descriptions. |
 | `--check` | `-c` | Validate ruleset syntax without grading or calling the API. |
 | `--rules <name\|path>` | `-r` | Ruleset to apply. Repeatable. Accepts built-in names, Markdown (`.md`) files, or JSON file paths. |
 | `--provider <jev\|openrouter>` | `-p` | Override the AI provider. |

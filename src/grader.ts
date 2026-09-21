@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { basename, resolve } from "node:path";
 import type { Answers } from "@openrouter/sdk/models/decisionsresponse";
 import type { DecisionsScoreAnswer } from "@openrouter/sdk/models/decisionsscoreanswer";
 import { parseMarkdownRules } from "./markdown/rules.ts";
@@ -11,9 +12,11 @@ import type {
 	Question,
 	Rule,
 	RuleSet,
+	RulesetInfo,
+	RulesetScope,
 } from "./types.ts";
 
-export type { RuleSet };
+export type { RuleSet, RulesetInfo, RulesetScope };
 
 const MODEL = "~typesafe/jev-latest";
 const THRESHOLD = 0.8;
@@ -134,17 +137,68 @@ export function extractDocumentFlags(
 
 // ── Side Effects (I/O & Providers) ───────────────────────────────────────────
 
+export async function loadRuleset(
+	filePath: string,
+): Promise<RulesetInfo & { rules: Record<string, Rule> }> {
+	const content = await readFile(filePath, "utf8");
+	let description = "";
+	let rules: Record<string, Rule> = {};
+
+	if (filePath.endsWith(".md")) {
+		const parsed = parseMarkdownRules(content, filePath);
+		description = parsed.description;
+		rules = parsed.rules;
+	} else {
+		const parsed = JSON.parse(content) as Record<string, unknown>;
+		if (typeof parsed.description === "string") {
+			description = parsed.description;
+		}
+		if (
+			parsed.rules &&
+			typeof parsed.rules === "object" &&
+			!Array.isArray(parsed.rules)
+		) {
+			rules = parsed.rules as Record<string, Rule>;
+		} else {
+			const { description: _, ...rest } = parsed;
+			rules = rest as Record<string, Rule>;
+		}
+	}
+
+	const { lineRules, docRules } = splitRules([rules]);
+	const lineRuleKeys = Object.keys(lineRules);
+	const docRuleKeys = Object.keys(docRules);
+	const lineRulesCount = lineRuleKeys.length;
+	const docRulesCount = docRuleKeys.length;
+	const rulesCount = lineRulesCount + docRulesCount;
+
+	const scope: RulesetScope =
+		lineRulesCount > 0 && docRulesCount > 0
+			? "mixed"
+			: lineRulesCount > 0
+				? "line"
+				: "document";
+
+	const baseName = basename(filePath);
+	const name = baseName.replace(/\.(md|json)$/, "");
+
+	return {
+		name,
+		path: resolve(filePath),
+		description,
+		scope,
+		rulesCount,
+		lineRulesCount,
+		docRulesCount,
+		lineRules: lineRuleKeys,
+		docRules: docRuleKeys,
+		rules,
+	};
+}
+
 export async function loadRules(paths: string[]): Promise<RuleSet> {
-	const raw = await Promise.all(
-		paths.map(async (p) => {
-			const content = await readFile(p, "utf8");
-			if (p.endsWith(".md")) {
-				return parseMarkdownRules(content, p);
-			}
-			return JSON.parse(content) as Record<string, Rule>;
-		}),
-	);
-	return splitRules(raw);
+	const rulesets = await Promise.all(paths.map((p) => loadRuleset(p)));
+	return splitRules(rulesets.map((r) => r.rules));
 }
 
 export async function gradeLines(

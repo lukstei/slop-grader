@@ -8,7 +8,7 @@ description: >
 
 # Slop Grading — Review & Fix Plan
 
-You receive the output of `slop-grader` (human-readable text or JSON via `--json`) and the original source file. Your job is to triage every flagged line, dismiss false positives, and produce a minimal fix plan with exact replacement text for every genuine violation.
+You receive the output of `slop-grader` (human-readable text or JSON via `--json`) and the original source file. Available built-in rulesets can be listed with `slop-grader --list-rulesets` (or `-l`, `--json` to inspect scopes, rule counts, and rule IDs). Your job is to triage every flagged line, dismiss false positives, and produce a minimal fix plan with exact replacement text for every genuine violation.
 
 ## Output formats of slop-grader
 

@@ -15,14 +15,17 @@ Does the line contain a banned word?
 		const result = parseMarkdownRules(md);
 		expect(result).toMatchInlineSnapshot(`
 			{
-			  "banned_word": {
-			    "criteria": {
-			      "false": "No banned words appear.",
-			      "true": "A banned word appears.",
+			  "description": "",
+			  "rules": {
+			    "banned_word": {
+			      "criteria": {
+			        "false": "No banned words appear.",
+			        "true": "A banned word appears.",
+			      },
+			      "instructions": "Does the line contain a banned word?",
+			      "scope": "line",
+			      "type": "noul",
 			    },
-			    "instructions": "Does the line contain a banned word?",
-			    "scope": "line",
-			    "type": "noul",
 			  },
 			}
 		`);
@@ -41,14 +44,17 @@ Does the line contain a banned word?
 		const result = parseMarkdownRules(md);
 		expect(result).toMatchInlineSnapshot(`
 			{
-			  "banned_word": {
-			    "criteria": {
-			      "false": "No banned words appear.",
-			      "true": "A banned word appears.",
+			  "description": "",
+			  "rules": {
+			    "banned_word": {
+			      "criteria": {
+			        "false": "No banned words appear.",
+			        "true": "A banned word appears.",
+			      },
+			      "instructions": "Does the line contain a banned word?",
+			      "scope": "line",
+			      "type": "noul",
 			    },
-			    "instructions": "Does the line contain a banned word?",
-			    "scope": "line",
-			    "type": "noul",
 			  },
 			}
 		`);
@@ -67,14 +73,17 @@ Does the line contain a banned word?
 		const result = parseMarkdownRules(md);
 		expect(result).toMatchInlineSnapshot(`
 			{
-			  "banned_word": {
-			    "criteria": {
-			      "false": "No banned words appear.",
-			      "true": "A banned word appears.",
+			  "description": "",
+			  "rules": {
+			    "banned_word": {
+			      "criteria": {
+			        "false": "No banned words appear.",
+			        "true": "A banned word appears.",
+			      },
+			      "instructions": "Does the line contain a banned word?",
+			      "scope": "line",
+			      "type": "noul",
 			    },
-			    "instructions": "Does the line contain a banned word?",
-			    "scope": "line",
-			    "type": "noul",
 			  },
 			}
 		`);
@@ -89,10 +98,13 @@ Does the line contain a banned word?
 		const result = parseMarkdownRules(md);
 		expect(result).toMatchInlineSnapshot(`
 			{
-			  "banned_word": {
-			    "instructions": "Does the line contain a banned word?",
-			    "scope": "line",
-			    "type": "noul",
+			  "description": "",
+			  "rules": {
+			    "banned_word": {
+			      "instructions": "Does the line contain a banned word?",
+			      "scope": "line",
+			      "type": "noul",
+			    },
 			  },
 			}
 		`);
@@ -107,10 +119,13 @@ Does the document contain an executive summary?
 		const result = parseMarkdownRules(md);
 		expect(result).toMatchInlineSnapshot(`
 			{
-			  "has_summary": {
-			    "instructions": "Does the document contain an executive summary?",
-			    "scope": "document",
-			    "type": "noul",
+			  "description": "",
+			  "rules": {
+			    "has_summary": {
+			      "instructions": "Does the document contain an executive summary?",
+			      "scope": "document",
+			      "type": "noul",
+			    },
 			  },
 			}
 		`);
@@ -145,34 +160,37 @@ Rate the narrative structure.
 		const result = parseMarkdownRules(md);
 		expect(result).toMatchInlineSnapshot(`
 			{
-			  "banned_word": {
-			    "instructions": "Does the line contain a banned word?",
-			    "scope": "line",
-			    "type": "noul",
-			  },
-			  "has_summary": {
-			    "instructions": "Does the document contain an executive summary?",
-			    "scope": "document",
-			    "type": "noul",
-			  },
-			  "narrative_arc": {
-			    "criteria": [
-			      "Disconnected",
-			      "Loosely organized",
-			      "Clear progression",
-			    ],
-			    "instructions": "Rate the narrative structure.",
-			    "scope": "document",
-			    "type": "score",
-			  },
-			  "typo": {
-			    "criteria": {
-			      "false": "No typos.",
-			      "true": "Typo present.",
+			  "description": "",
+			  "rules": {
+			    "banned_word": {
+			      "instructions": "Does the line contain a banned word?",
+			      "scope": "line",
+			      "type": "noul",
 			    },
-			    "instructions": "Check for typos.",
-			    "scope": "line",
-			    "type": "noul",
+			    "has_summary": {
+			      "instructions": "Does the document contain an executive summary?",
+			      "scope": "document",
+			      "type": "noul",
+			    },
+			    "narrative_arc": {
+			      "criteria": [
+			        "Disconnected",
+			        "Loosely organized",
+			        "Clear progression",
+			      ],
+			      "instructions": "Rate the narrative structure.",
+			      "scope": "document",
+			      "type": "score",
+			    },
+			    "typo": {
+			      "criteria": {
+			        "false": "No typos.",
+			        "true": "Typo present.",
+			      },
+			      "instructions": "Check for typos.",
+			      "scope": "line",
+			      "type": "noul",
+			    },
 			  },
 			}
 		`);
@@ -193,16 +211,19 @@ Rate the narrative structure of the text.
 		const result = parseMarkdownRules(md);
 		expect(result).toMatchInlineSnapshot(`
 			{
-			  "narrative_arc": {
-			    "criteria": [
-			      "Disconnected sections",
-			      "Loosely organized",
-			      "Clear progression",
-			      "Tight arc",
-			    ],
-			    "instructions": "Rate the narrative structure of the text.",
-			    "scope": "document",
-			    "type": "score",
+			  "description": "",
+			  "rules": {
+			    "narrative_arc": {
+			      "criteria": [
+			        "Disconnected sections",
+			        "Loosely organized",
+			        "Clear progression",
+			        "Tight arc",
+			      ],
+			      "instructions": "Rate the narrative structure of the text.",
+			      "scope": "document",
+			      "type": "score",
+			    },
 			  },
 			}
 		`);
@@ -221,14 +242,17 @@ Does the document contain an executive summary?
 		const result = parseMarkdownRules(md);
 		expect(result).toMatchInlineSnapshot(`
 			{
-			  "has_summary": {
-			    "criteria": {
-			      "false": "No executive summary exists.",
-			      "true": "An executive summary is present.",
+			  "description": "",
+			  "rules": {
+			    "has_summary": {
+			      "criteria": {
+			        "false": "No executive summary exists.",
+			        "true": "An executive summary is present.",
+			      },
+			      "instructions": "Does the document contain an executive summary?",
+			      "scope": "document",
+			      "type": "noul",
 			    },
-			    "instructions": "Does the document contain an executive summary?",
-			    "scope": "document",
-			    "type": "noul",
 			  },
 			}
 		`);
@@ -258,25 +282,28 @@ Check line quality.
 		const result = parseMarkdownRules(md);
 		expect(result).toMatchInlineSnapshot(`
 			{
-			  "doc_score": {
-			    "criteria": [
-			      "Poor",
-			      "Fair",
-			      "Good",
-			      "Excellent",
-			    ],
-			    "instructions": "Evaluate overall quality.",
-			    "scope": "document",
-			    "type": "score",
-			  },
-			  "line_check": {
-			    "criteria": {
-			      "false": "Line is clean.",
-			      "true": "Line has an issue.",
+			  "description": "",
+			  "rules": {
+			    "doc_score": {
+			      "criteria": [
+			        "Poor",
+			        "Fair",
+			        "Good",
+			        "Excellent",
+			      ],
+			      "instructions": "Evaluate overall quality.",
+			      "scope": "document",
+			      "type": "score",
 			    },
-			    "instructions": "Check line quality.",
-			    "scope": "line",
-			    "type": "noul",
+			    "line_check": {
+			      "criteria": {
+			        "false": "Line is clean.",
+			        "true": "Line has an issue.",
+			      },
+			      "instructions": "Check line quality.",
+			      "scope": "line",
+			      "type": "noul",
+			    },
 			  },
 			}
 		`);
@@ -293,7 +320,7 @@ Check code style.
 - **false**: Good style.
 `;
 		const result = parseMarkdownRules(md);
-		expect(result).toHaveProperty("code_style");
+		expect(result.rules).toHaveProperty("code_style");
 	});
 
 	it("handles multiline criteria items with indentation", () => {
@@ -308,7 +335,7 @@ Detailed evaluation.
 - Level 1 — second part
 `;
 		const result = parseMarkdownRules(md);
-		expect(result.detailed_score?.criteria).toMatchInlineSnapshot(`
+		expect(result.rules.detailed_score?.criteria).toMatchInlineSnapshot(`
 			[
 			  "Level 0 — first part and continuation line",
 			  "Level 1 — second part",
@@ -316,7 +343,7 @@ Detailed evaluation.
 		`);
 	});
 
-	it("ignores description text before the first H1", () => {
+	it("extracts description text before the first H1", () => {
 		const md = `This is a description of the ruleset.
 It can span multiple lines and paragraphs.
 
@@ -332,8 +359,14 @@ Does the line contain a banned word?
 - **false**: no
 `;
 		const result = parseMarkdownRules(md);
-		expect(result).toHaveProperty("banned_word");
-		expect(result.banned_word?.instructions).toBe(
+		expect(result.description).toMatchInlineSnapshot(`
+			"This is a description of the ruleset.
+			It can span multiple lines and paragraphs.
+
+			More context here."
+		`);
+		expect(result.rules).toHaveProperty("banned_word");
+		expect(result.rules.banned_word?.instructions).toBe(
 			"Does the line contain a banned word?",
 		);
 	});
@@ -513,8 +546,10 @@ echo "hello"
 - **false**: no
 `;
 		const result = parseMarkdownRules(md);
-		expect(result.code_rule).toBeDefined();
-		expect(result.code_rule?.instructions).toContain("# Not a heading comment");
+		expect(result.rules.code_rule).toBeDefined();
+		expect(result.rules.code_rule?.instructions).toContain(
+			"# Not a heading comment",
+		);
 	});
 
 	it("preserves rule identifiers with multiple underscores without stripping to italics", () => {
@@ -528,7 +563,7 @@ Check spelling.
 - **false**: correct
 `;
 		const result = parseMarkdownRules(md);
-		expect(Object.keys(result)).toMatchInlineSnapshot(`
+		expect(Object.keys(result.rules)).toMatchInlineSnapshot(`
 			[
 			  "spelling_and_confused_words",
 			]

@@ -1,10 +1,16 @@
 import assert from "node:assert/strict";
 import { realpathSync } from "node:fs";
-import { readFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
-import { gradeDocument, gradeLines, loadRules, parseLines } from "./grader.ts";
+import {
+	gradeDocument,
+	gradeLines,
+	loadRules,
+	loadRuleset,
+	parseLines,
+} from "./grader.ts";
 import {
 	createProvider,
 	type Provider,
@@ -18,6 +24,7 @@ import {
 	formatStats,
 	isScoreViolation,
 } from "./report.ts";
+import type { RulesetInfo } from "./types.ts";
 
 const RULES_DIR = fileURLToPath(new URL("../rules/", import.meta.url));
 
@@ -26,6 +33,27 @@ export function resolveRulePath(r: string): string {
 		return resolve(RULES_DIR, `${r}.md`);
 	}
 	return resolve(r);
+}
+
+export async function listBuiltinRulesets(
+	rulesDir = RULES_DIR,
+): Promise<RulesetInfo[]> {
+	const entries = await readdir(rulesDir, { withFileTypes: true });
+	const files = entries
+		.filter(
+			(entry) =>
+				entry.isFile() &&
+				(entry.name.endsWith(".md") || entry.name.endsWith(".json")),
+		)
+		.map((entry) => entry.name)
+		.sort();
+
+	return Promise.all(
+		files.map(async (file) => {
+			const { rules: _, ...info } = await loadRuleset(resolve(rulesDir, file));
+			return info;
+		}),
+	);
 }
 
 export function parseCliArgs(argv = process.argv.slice(2)): {
@@ -39,6 +67,7 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 	debug: boolean;
 	help: boolean;
 	version: boolean;
+	listRulesets: boolean;
 } {
 	const { values, positionals } = parseArgs({
 		args: argv,
@@ -52,21 +81,24 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 			debug: { type: "boolean", short: "d", default: false },
 			help: { type: "boolean", short: "h", default: false },
 			version: { type: "boolean", short: "v", default: false },
+			"list-rulesets": { type: "boolean", short: "l", default: false },
 		},
 		allowPositionals: true,
 	});
 
 	const help = values.help ?? false;
 	const version = values.version ?? false;
-	if (help || version) {
+	const listRulesets = values["list-rulesets"] ?? false;
+	if (help || version || listRulesets) {
 		return {
 			check: false,
 			rulesPaths: [],
-			json: false,
+			json: values.json ?? false,
 			stats: false,
 			debug: false,
 			help,
 			version,
+			listRulesets,
 		};
 	}
 
@@ -77,7 +109,7 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 
 	if (!rulesPaths.length || (!check && !file)) {
 		throw new Error(
-			"usage: node main.ts [-c|--check] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [-h|--help] [-v|--version] [file]",
+			"usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [-h|--help] [-v|--version] [file]",
 		);
 	}
 
@@ -103,11 +135,12 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 		debug: values.debug ?? false,
 		help: false,
 		version: false,
+		listRulesets: false,
 	};
 }
 
 const USAGE =
-	"usage: slop-grader [-c|--check] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [-h|--help] [-v|--version] [file]";
+	"usage: slop-grader [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [-h|--help] [-v|--version] [file]";
 
 async function main() {
 	const {
@@ -121,6 +154,7 @@ async function main() {
 		debug,
 		help,
 		version,
+		listRulesets,
 	} = parseCliArgs();
 
 	if (help) {
@@ -134,6 +168,37 @@ async function main() {
 			version: string;
 		};
 		console.log(pkg.version);
+		return;
+	}
+
+	if (listRulesets) {
+		const rulesets = await listBuiltinRulesets();
+		if (json) {
+			console.log(JSON.stringify(rulesets, null, 2));
+		} else {
+			const maxName = Math.max(
+				...rulesets.map((r) => r.name.length),
+				"NAME".length,
+			);
+			const maxScope = Math.max(
+				...rulesets.map((r) => r.scope.length),
+				"SCOPE".length,
+			);
+			const maxRules = Math.max(
+				...rulesets.map((r) => String(r.rulesCount).length),
+				"RULES".length,
+			);
+
+			console.log(
+				`${"NAME".padEnd(maxName)}  ${"SCOPE".padEnd(maxScope)}  ${"RULES".padStart(maxRules)}  DESCRIPTION`,
+			);
+			for (const r of rulesets) {
+				const name = r.name.padEnd(maxName);
+				const scope = r.scope.padEnd(maxScope);
+				const rules = String(r.rulesCount).padStart(maxRules);
+				console.log(`${name}  ${scope}  ${rules}  ${r.description}`);
+			}
+		}
 		return;
 	}
 

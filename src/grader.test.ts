@@ -12,6 +12,7 @@ import {
 	gradeLines,
 	lineMarker,
 	loadRules,
+	loadRuleset,
 	parseLines,
 	splitRules,
 } from "./grader.ts";
@@ -387,5 +388,99 @@ Third line`;
 				Object.keys(lineRules).length + Object.keys(docRules).length,
 			).toBeGreaterThan(0);
 		}
+	});
+
+	it("loadRules loads grammar-german.md with all discrete rules", async () => {
+		const { lineRules, docRules } = await loadRules([
+			"rules/grammar-german.md",
+		]);
+		expect(Object.keys(lineRules)).toMatchInlineSnapshot(`
+			[
+			  "spelling_and_typos",
+			  "compound_spacing",
+			  "confused_words",
+			  "comparison_particles",
+			  "unnecessary_anglicisms",
+			  "grammatical_agreement",
+			  "double_perfect",
+			  "subordinate_verb_position",
+			  "negation_placement",
+			  "comma_placement",
+			  "salutation_comma",
+			  "hyphen_and_dash",
+			  "quotation_marks",
+			]
+		`);
+		expect(docRules).toEqual({});
+	});
+
+	it("loadRules loads grammar-english.md with all discrete rules", async () => {
+		const { lineRules, docRules } = await loadRules([
+			"rules/grammar-english.md",
+		]);
+		expect(Object.keys(lineRules)).toMatchInlineSnapshot(`
+			[
+			  "spelling_and_typos",
+			  "homophones_and_contractions",
+			  "confused_words",
+			  "grammatical_agreement",
+			  "verb_inflection",
+			  "tense_and_sequence",
+			  "subjunctive_mood",
+			  "verb_complementation",
+			  "preposition_and_collocation",
+			  "pronoun_case",
+			  "pronoun_antecedent_and_order",
+			  "possessive_apostrophe",
+			  "run_on_and_comma_splice",
+			  "dangling_modifier",
+			  "double_negative",
+			  "redundant_conjunction",
+			  "comparatives_and_superlatives",
+			  "determiners_and_quantifiers",
+			  "article_usage",
+			  "passive_voice_overuse",
+			  "noun_pile_up",
+			]
+		`);
+		expect(docRules).toEqual({});
+	});
+
+	it("loadRuleset loads a ruleset with full metadata", async () => {
+		const info = await loadRuleset("rules/tech-docs.md");
+		expect({
+			name: info.name,
+			scope: info.scope,
+			rulesCount: info.rulesCount,
+			lineRulesCount: info.lineRulesCount,
+			docRulesCount: info.docRulesCount,
+			lineRules: info.lineRules,
+			docRules: info.docRules,
+			description: info.description,
+		}).toMatchInlineSnapshot(`
+			{
+			  "description": "Technical documentation rules: structure, task orientation, completeness, code examples, prerequisite clarity, and line-level technical writing standards.",
+			  "docRules": [
+			    "structure_navigability",
+			    "task_orientation",
+			    "completeness",
+			    "code_example_quality",
+			    "prerequisite_clarity",
+			  ],
+			  "docRulesCount": 5,
+			  "lineRules": [
+			    "minimizing_complexity",
+			    "undefined_jargon",
+			    "ambiguous_reference",
+			    "missing_version_qualifier",
+			    "magic_value",
+			    "stale_placeholder",
+			  ],
+			  "lineRulesCount": 6,
+			  "name": "tech-docs",
+			  "rulesCount": 11,
+			  "scope": "mixed",
+			}
+		`);
 	});
 });
