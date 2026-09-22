@@ -1,4 +1,4 @@
-# `wf` Plugin — Project Backlog
+# Backlog
 
 ## Backlog Format Guidelines
 
@@ -70,7 +70,7 @@
 - **Agent Triage:** Pack `(line, rule)` question pairs into single requests. Track combined state and question tokens dynamically with `tokenx`, and ensure question IDs (e.g. `L0001_ruleId`) map cleanly back to line numbers and rule keys.
 
 ### [x] 13. Incremental Line-Level Caching
-- **Current State:** Line evaluations are cached deterministically by content hash in the OS-recommended cache directory (`<cacheDir>/v1/<provider>/<safeModel>/<ruleId>.json.gz`) with LRU eviction and atomic gzip persistence. Unchanged lines bypass API calls.
+- **Current State:** Line evaluations are cached deterministically by content hash in the OS-recommended cache directory (`<cacheDir>/v1/<provider>/<safeModel>/<ruleId>.json.gz`) with FIFO / insertion-order eviction and atomic gzip persistence. Unchanged lines bypass API calls.
 - **Objective:** Cache line evaluation results by content and rule hash, skipping re-evaluation for unchanged lines during iterative editing loops.
 - **Agent Triage:** Key cache entries on `hash(line_text, rule_definition)`. Store locally in `.slop-grader/cache` or user cache dir, with a `--no-cache` flag to bypass.
 
@@ -150,3 +150,17 @@
 - **Objective:** Support YAML (`.yaml`/`.yml`) for authoring rulesets—either transitioning completely to YAML or using it specifically for complex rulesets with advanced configuration options.
 - **Agent Triage:** YAML multiline block scalars (`|`) and comments fit complex prompt definitions well. Weigh dependency weight (e.g. `yaml`) and decide whether to migrate all rulesets or keep Markdown for simple rules and reserve YAML for complex ones.
 
+### [ ] 29. Hosted Web App for Interactive CLI Flag Configuration
+- **Current State:** Users must construct CLI flags, ruleset paths, provider settings, and output options manually in the terminal. Prospective users have no interactive way to explore available rulesets, scopes, and flags without installing the CLI.
+- **Objective:** Provide a public, static web application that lets users interactively explore built-in rulesets, configure CLI options (`--rules`, `--check`, `--json`, `--stats`, `--debug`, `--no-cache`), and copy the generated terminal command string.
+- **Agent Triage:** Keep the hosted app strictly informational with zero secret handling: no API key prompts or remote credential storage. Deployable as a static SPA (e.g. GitHub Pages). Display a banner explaining how to run live evaluation locally via `slop-grader --ui`.
+
+### [ ] 30. Local Web UI for In-Browser Evaluation (`slop-grader --ui`)
+- **Current State:** `slop-grader` evaluation reports render solely as terminal text or JSON streams. There is no interactive interface to test text, inspect violations line by line, or visually explore document scores without terminal commands.
+- **Objective:** Add a `--ui` (`-u`) CLI flag that starts a lightweight, localhost-only web interface for interactive text evaluation, rule inspection, and visual scorecards.
+- **Agent Triage:** Serve the UI via a zero-dependency `node:http` server bound strictly to `127.0.0.1`. Automatically detect local environment keys (`TYPESAFE_API_KEY`, `OPENROUTER_API_KEY`) and reuse the local `LineCacheManager` disk cache. Allow selecting local files and custom rulesets directly without CORS barriers.
+
+### [ ] 31. Print Violated Rules and Fix Instructions in Reports
+- **Current State:** `formatLineReport` in `src/report.ts` renders violations as letter codes mapped to line numbers (`A | L0012: text`). The report does not print rule names, descriptions, or fix guidance alongside the flagged lines.
+- **Objective:** Print the violated rule names and any available fix or improvement instructions directly in the report for each flagged line.
+- **Agent Triage:** Format remediation guidance beneath each violation (e.g. indented `→ [rule_id]: <fix>`). Omit the fix line cleanly when no instructions exist on the rule. Include the rule name and fix fields in `--json` output.

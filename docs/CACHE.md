@@ -81,7 +81,7 @@ Entries are stored as an array of `[hash, score]` pairs up to 25,000 entries.
 ### Eviction & Deduplication
 
 - **Capacity limit:** Default maximum of 25,000 entries per rule.
-- **LRU order:** When adding fresh evaluations, existing entries matching the incoming hashes are removed, and the new entries are prepended to the head of the array. The array is then truncated to 25,000 entries.
+- **Eviction order:** Eviction follows insertion order (FIFO by evaluation recency), not access-based LRU. When adding fresh evaluations, existing entries matching the incoming hashes are removed, and new entries are prepended to the head of the array. The array is then truncated to 25,000 entries. Cached hits do not rewrite disk files or bump positions, keeping cache hits purely read-only with zero overhead.
 - **Deduplication:** Repeated identical lines within a document are deduplicated before prepending, storing only one entry per unique line hash.
 
 ### Memory Protection
