@@ -299,13 +299,14 @@ async function main() {
 
 	const lineRulesCount = Object.keys(lineRules).length;
 	const docRulesCount = Object.keys(docRules).length;
+	const targetLinesCount = lines.filter((l) => l.trim().length > 0).length;
 	const statsData = stats
 		? {
 				rules: lineRulesCount + docRulesCount,
 				lineRules: lineRulesCount,
 				docRules: docRulesCount,
 				lines: lines.length,
-				questions: lines.length * lineRulesCount + docRulesCount,
+				questions: targetLinesCount * lineRulesCount + docRulesCount,
 				apiCalls,
 				apiQuestions,
 				cacheHits: cache ? cacheHits : undefined,

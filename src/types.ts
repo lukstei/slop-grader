@@ -1,5 +1,5 @@
-export type Line = { lineNum: number; text: string };
-export type FlagMap = Map<number, string[]>;
+export type LineIndex = number;
+export type FlagMap = Map<LineIndex, string[]>;
 
 export type NoulQuestion = {
 	type: "noul";

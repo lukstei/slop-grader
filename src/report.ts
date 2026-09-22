@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import type { DecisionsScoreAnswer } from "@openrouter/sdk/models/decisionsscoreanswer";
-import { lineMarker } from "./grader.ts";
-import type { FlagMap, Line, NoulQuestion, Question, Stats } from "./types.ts";
+import { lineMarker } from "./batch.ts";
+import type { FlagMap, NoulQuestion, Question, Stats } from "./types.ts";
 
 const CONF_HIGH = 0.8;
 const CONF_MID = 0.5;
@@ -28,7 +28,7 @@ export function confidenceTier(conf: number): "low" | "mid" | "high" {
 }
 
 export function formatLineReport(
-	lines: Line[],
+	allLines: string[],
 	flags: FlagMap,
 	questions: Record<string, NoulQuestion>,
 ): string[] {
@@ -43,13 +43,13 @@ export function formatLineReport(
 	out.push("");
 
 	let hasViolations = false;
-	for (const { lineNum, text } of lines) {
-		const lineFlags = flags.get(lineNum);
+	for (let lineIndex = 0; lineIndex < allLines.length; lineIndex++) {
+		const lineFlags = flags.get(lineIndex);
 		if (!lineFlags?.length) continue;
 		hasViolations = true;
 		const letters = lineFlags.map((k) => keyToLetter.get(k) ?? k);
 		out.push(
-			`${letters.join(",").padEnd(15)} | ${lineMarker(lineNum)}: ${text}`,
+			`${letters.join(",").padEnd(15)} | ${lineMarker(lineIndex)}: ${allLines[lineIndex]}`,
 		);
 	}
 
@@ -146,20 +146,28 @@ export function formatStats(stats: Stats): string[] {
 export function formatJson(
 	filePath: string,
 	rulesPaths: string[],
-	lines: Line[],
+	allLines: string[],
 	flags: FlagMap,
 	scores: Record<string, DecisionsScoreAnswer>,
 	docQuestions: Record<string, Question>,
 	docFlags: string[] = [],
 	stats?: Stats,
 ): string {
-	const flaggedLines = lines
-		.filter(({ lineNum }) => flags.has(lineNum))
-		.map(({ lineNum, text }) => ({
-			lineNum,
-			text,
-			rules: flags.get(lineNum) ?? [],
-		}));
+	const flaggedLines: Array<{
+		lineNum: number;
+		text: string;
+		rules: string[];
+	}> = [];
+	for (let lineIndex = 0; lineIndex < allLines.length; lineIndex++) {
+		const lineFlags = flags.get(lineIndex);
+		if (lineFlags?.length) {
+			flaggedLines.push({
+				lineNum: lineIndex + 1,
+				text: allLines[lineIndex],
+				rules: lineFlags,
+			});
+		}
+	}
 
 	const document: Record<
 		string,

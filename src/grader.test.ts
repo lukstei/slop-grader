@@ -5,14 +5,11 @@ import { describe, expect, it } from "vitest";
 import { LineCacheManager } from "./cache.ts";
 import {
 	assertCompleteAnswers,
-	batchLines,
-	buildBatchRequest,
 	extractDocumentFlags,
 	extractDocumentScores,
 	extractLineFlags,
 	gradeDocument,
 	gradeLines,
-	lineMarker,
 	loadRules,
 	loadRuleset,
 	parseLines,
@@ -22,7 +19,7 @@ import type { Provider } from "./provider.ts";
 import type { Rule } from "./types.ts";
 
 describe("grader", () => {
-	it("parseLines splits non-empty lines and preserves line numbers", () => {
+	it("parseLines preserves all lines including empty lines", () => {
 		const input = `First line
 
 Second line with whitespace
@@ -31,18 +28,11 @@ Third line`;
 		const result = parseLines(input);
 		expect(result).toMatchInlineSnapshot(`
 			[
-			  {
-			    "lineNum": 1,
-			    "text": "First line",
-			  },
-			  {
-			    "lineNum": 3,
-			    "text": "Second line with whitespace",
-			  },
-			  {
-			    "lineNum": 5,
-			    "text": "Third line",
-			  },
+			  "First line",
+			  "",
+			  "Second line with whitespace",
+			  "   ",
+			  "Third line",
 			]
 		`);
 	});
@@ -52,97 +42,12 @@ Third line`;
 		const result = parseLines(input);
 		expect(result).toMatchInlineSnapshot(`
 			[
-			  {
-			    "lineNum": 1,
-			    "text": "First line",
-			  },
-			  {
-			    "lineNum": 3,
-			    "text": "Second line",
-			  },
-			  {
-			    "lineNum": 4,
-			    "text": "Third line",
-			  },
+			  "First line",
+			  "",
+			  "Second line",
+			  "Third line",
 			]
 		`);
-	});
-
-	it("lineMarker formats line numbers with zero-padding", () => {
-		const markers = [1, 10, 100, 1000].map(lineMarker);
-		expect(markers).toMatchInlineSnapshot(`
-			[
-			  "L0001",
-			  "L0010",
-			  "L0100",
-			  "L1000",
-			]
-		`);
-	});
-
-	it("batchLines packs lines dynamically within token budget", () => {
-		const lines = [
-			{ lineNum: 1, text: "alpha" },
-			{ lineNum: 2, text: "beta" },
-			{ lineNum: 3, text: "gamma" },
-			{ lineNum: 4, text: "delta" },
-		];
-		const rule = {
-			type: "noul" as const,
-			instructions: "check",
-		};
-		// lineTokens per line is ~20 tokens; with maxTokens = 45, exactly 2 lines fit per batch
-		const batches = batchLines(lines, rule, 45);
-		expect(batches).toMatchInlineSnapshot(`
-			[
-			  [
-			    {
-			      "lineNum": 1,
-			      "text": "alpha",
-			    },
-			    {
-			      "lineNum": 2,
-			      "text": "beta",
-			    },
-			  ],
-			  [
-			    {
-			      "lineNum": 3,
-			      "text": "gamma",
-			    },
-			    {
-			      "lineNum": 4,
-			      "text": "delta",
-			    },
-			  ],
-			]
-		`);
-	});
-
-	it("batchLines caps batches at 255 lines even under budget", () => {
-		const lines = Array.from({ length: 300 }, (_, i) => ({
-			lineNum: i + 1,
-			text: `line ${i + 1}`,
-		}));
-		const rule = {
-			type: "noul" as const,
-			instructions: "test",
-		};
-		const batches = batchLines(lines, rule, 100_000);
-		expect(batches.map((b) => b.length)).toMatchInlineSnapshot(`
-			[
-			  255,
-			  45,
-			]
-		`);
-	});
-
-	it("batchLines returns empty array for empty lines", () => {
-		const rule = {
-			type: "noul" as const,
-			instructions: "test",
-		};
-		expect(batchLines([], rule)).toMatchInlineSnapshot(`[]`);
 	});
 
 	it("splitRules separates line and document scoped rules", () => {
@@ -220,34 +125,6 @@ Third line`;
 		);
 	});
 
-	it("buildBatchRequest generates formatted state and question prompts", () => {
-		const lines = [
-			{ lineNum: 1, text: "Hello world" },
-			{ lineNum: 2, text: "Second line" },
-		];
-		const qDef = {
-			type: "noul" as const,
-			instructions: "Does this contain slop?",
-		};
-		const result = buildBatchRequest(lines, qDef);
-		expect(result).toMatchInlineSnapshot(`
-			{
-			  "batchQuestions": {
-			    "L0001": {
-			      "instructions": "For the line L0001 answer: Does this contain slop?",
-			      "type": "noul",
-			    },
-			    "L0002": {
-			      "instructions": "For the line L0002 answer: Does this contain slop?",
-			      "type": "noul",
-			    },
-			  },
-			  "state": "L0001| Hello world
-			L0002| Second line",
-			}
-		`);
-	});
-
 	it("extractLineFlags filters answers exceeding threshold", () => {
 		const results: Array<{ qKey: string; answers: Record<string, Answers> }> = [
 			{
@@ -269,14 +146,14 @@ Third line`;
 		expect(Array.from(flags.entries())).toMatchInlineSnapshot(`
 			[
 			  [
-			    1,
+			    0,
 			    [
 			      "rule_a",
 			      "rule_b",
 			    ],
 			  ],
 			  [
-			    3,
+			    2,
 			    [
 			      "rule_b",
 			    ],
@@ -337,7 +214,7 @@ Third line`;
 			},
 		};
 
-		const lines = [{ lineNum: 1, text: "Empowering innovation" }];
+		const lines = ["Empowering innovation"];
 		const lineRules = {
 			banned_word: {
 				type: "noul" as const,
@@ -353,7 +230,7 @@ Third line`;
 		expect(Array.from(flags.entries())).toMatchInlineSnapshot(`
 			[
 			  [
-			    1,
+			    0,
 			    [
 			      "banned_word",
 			    ],
@@ -461,10 +338,7 @@ Third line`;
 			},
 		};
 
-		const lines = [
-			{ lineNum: 1, text: "First line" },
-			{ lineNum: 2, text: "Second line" },
-		];
+		const lines = ["First line", "Second line"];
 		const questions = {
 			rule_a: { type: "noul" as const, instructions: "Check rule A" },
 		};
@@ -500,10 +374,7 @@ Third line`;
 				model: droppingProvider.model,
 			});
 
-			const lines = [
-				{ lineNum: 1, text: "First line" },
-				{ lineNum: 2, text: "Second line" },
-			];
+			const lines = ["First line", "Second line"];
 			const questions = {
 				rule_a: { type: "noul" as const, instructions: "Check rule A" },
 			};
@@ -515,7 +386,7 @@ Third line`;
 			const cacheHits = await cacheManager.prefilterRule(
 				"rule_a",
 				questions.rule_a,
-				lines,
+				[0, 1],
 				new Map(),
 			);
 			expect(cacheHits.cachedScores.size).toBe(0);
@@ -569,10 +440,7 @@ Third line`;
 				},
 			};
 
-			const lines = [
-				{ lineNum: 1, text: "Empowering innovation" },
-				{ lineNum: 2, text: "Normal sentence here" },
-			];
+			const lines = ["Empowering innovation", "Normal sentence here"];
 			const lineRules = {
 				banned_word: {
 					type: "noul" as const,
@@ -595,8 +463,8 @@ Third line`;
 			);
 			expect(decisionCalls).toBe(1);
 			expect(run1.cacheHits).toBe(0);
-			expect(run1.flags.get(1)).toEqual(["banned_word"]);
-			expect(run1.flags.has(2)).toBe(false);
+			expect(run1.flags.get(0)).toEqual(["banned_word"]);
+			expect(run1.flags.has(1)).toBe(false);
 
 			// Run 2: Hot cache -> 0 provider calls, exact same flags
 			const cacheManager2 = new LineCacheManager({
@@ -612,13 +480,13 @@ Third line`;
 			);
 			expect(decisionCalls).toBe(1); // Still 1!
 			expect(run2.cacheHits).toBe(2);
-			expect(run2.flags.get(1)).toEqual(["banned_word"]);
-			expect(run2.flags.has(2)).toBe(false);
+			expect(run2.flags.get(0)).toEqual(["banned_word"]);
+			expect(run2.flags.has(1)).toBe(false);
 
 			// Run 3: 1 line edited -> only edited line evaluated
 			const editedLines = [
-				{ lineNum: 1, text: "Empowering innovation" }, // cached
-				{ lineNum: 2, text: "A brand new edited line" }, // uncached
+				"Empowering innovation", // cached
+				"A brand new edited line", // uncached
 			];
 			const run3 = await gradeLines(
 				editedLines,
