@@ -4,6 +4,7 @@ import type { Answers } from "@openrouter/sdk/models/decisionsresponse";
 import { describe, expect, it } from "vitest";
 import { LineCacheManager } from "./cache.ts";
 import {
+	assertCompleteAnswers,
 	batchLines,
 	buildBatchRequest,
 	extractDocumentFlags,
@@ -418,6 +419,134 @@ Third line`;
 			  "scores": {},
 			}
 		`);
+	});
+
+	it("assertCompleteAnswers validates answer presence and completeness", () => {
+		expect(() =>
+			assertCompleteAnswers(undefined, ["L0001"], "jev"),
+		).toThrowErrorMatchingInlineSnapshot(
+			`[Error: Provider (jev) returned invalid response: missing answers object]`,
+		);
+
+		expect(() =>
+			assertCompleteAnswers({}, ["L0001", "L0002"], "jev"),
+		).toThrowErrorMatchingInlineSnapshot(
+			`[Error: Provider (jev) returned incomplete answers: missing 2 of 2 answers]`,
+		);
+
+		expect(() =>
+			assertCompleteAnswers(
+				{ L0001: { type: "noul", noul: 0.1 } },
+				["L0001", "L0002"],
+				"openrouter",
+			),
+		).toThrowErrorMatchingInlineSnapshot(
+			`[Error: Provider (openrouter) returned incomplete answers: missing 1 of 2 answers]`,
+		);
+
+		const valid = { L0001: { type: "noul" as const, noul: 0.1 } };
+		expect(() => assertCompleteAnswers(valid, ["L0001"], "jev")).not.toThrow();
+	});
+
+	it("gradeLines throws when provider returns incomplete answers", async () => {
+		const droppingProvider: Provider = {
+			name: "jev",
+			model: "jev-1.13.0",
+			async createDecision() {
+				return {
+					answers: {
+						L0001: { type: "noul", noul: 0.9 },
+					},
+				};
+			},
+		};
+
+		const lines = [
+			{ lineNum: 1, text: "First line" },
+			{ lineNum: 2, text: "Second line" },
+		];
+		const questions = {
+			rule_a: { type: "noul" as const, instructions: "Check rule A" },
+		};
+
+		await expect(
+			gradeLines(lines, questions, droppingProvider),
+		).rejects.toThrowErrorMatchingInlineSnapshot(
+			`[Error: Provider (jev) returned incomplete answers: missing 1 of 2 answers]`,
+		);
+	});
+
+	it("gradeLines does not write to cache when provider returns incomplete answers", async () => {
+		const { mkdtemp, rm } = await import("node:fs/promises");
+		const { tmpdir } = await import("node:os");
+		const tempDir = await mkdtemp(join(tmpdir(), "grader-partial-cache-test-"));
+
+		try {
+			const droppingProvider: Provider = {
+				name: "jev",
+				model: "jev-1.13.0",
+				async createDecision() {
+					return {
+						answers: {
+							L0001: { type: "noul", noul: 0.9 },
+						},
+					};
+				},
+			};
+
+			const cacheManager = new LineCacheManager({
+				baseDir: tempDir,
+				provider: droppingProvider.name,
+				model: droppingProvider.model,
+			});
+
+			const lines = [
+				{ lineNum: 1, text: "First line" },
+				{ lineNum: 2, text: "Second line" },
+			];
+			const questions = {
+				rule_a: { type: "noul" as const, instructions: "Check rule A" },
+			};
+
+			await expect(
+				gradeLines(lines, questions, droppingProvider, cacheManager),
+			).rejects.toThrow();
+
+			const cacheHits = await cacheManager.prefilterRule(
+				"rule_a",
+				questions.rule_a,
+				lines,
+				new Map(),
+			);
+			expect(cacheHits.cachedScores.size).toBe(0);
+		} finally {
+			await rm(tempDir, { recursive: true, force: true });
+		}
+	});
+
+	it("gradeDocument throws when provider returns incomplete answers", async () => {
+		const droppingProvider: Provider = {
+			name: "jev",
+			model: "jev-1.13.0",
+			async createDecision() {
+				return {
+					answers: {
+						has_summary: { type: "noul", noul: 0.9 },
+					},
+				};
+			},
+		};
+
+		const docRules = {
+			has_summary: { type: "noul" as const, instructions: "Summary check" },
+			quality: { type: "noul" as const, instructions: "Quality check" },
+		};
+
+		await expect(
+			gradeDocument("Document text", docRules, droppingProvider),
+		).rejects.toThrowErrorMatchingInlineSnapshot(
+			`[Error: Provider (jev) returned incomplete answers: missing 1 of 2 answers]`,
+		);
 	});
 
 	it("gradeLines skips provider calls when lines hit cache", async () => {

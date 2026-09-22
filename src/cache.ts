@@ -126,7 +126,7 @@ export class RuleCache {
 
 	/**
 	 * Adds fresh evaluations to the cache. Incoming entries are deduplicated so duplicate
-	 * lines in a batch cannot pollute the LRU array with duplicate keys.
+	 * lines in a batch cannot pollute the array with duplicate keys.
 	 */
 	addMatches(fresh: Iterable<[hash: string, score: number]>): void {
 		const freshMap = new Map<string, number>();

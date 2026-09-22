@@ -182,4 +182,52 @@ describe("JevProvider", () => {
 			}
 		`);
 	});
+
+	it("throws descriptive error when gateway returns HTML with status 200", async () => {
+		const mockFetch = async () => {
+			return new Response("<html><body>502 Bad Gateway</body></html>", {
+				status: 200,
+				headers: { "Content-Type": "text/html" },
+			});
+		};
+
+		const client = new TypeSafeClient({ apiKey: "test-key", fetch: mockFetch });
+		const provider = new JevProvider(client);
+
+		await expect(
+			provider.createDecision({
+				model: "",
+				state: "Text",
+				questions: {
+					is_slop: { type: "noul", instructions: "slop?" },
+				},
+			}),
+		).rejects.toThrowErrorMatchingInlineSnapshot(
+			`[Error: Provider (jev) returned invalid response: received non-JSON response "<html><body>502 Bad Gateway</body></html>"]`,
+		);
+	});
+
+	it("throws descriptive error when response lacks answers object", async () => {
+		const mockFetch = async () => {
+			return new Response(JSON.stringify({ model: "jev-1.13.0" }), {
+				status: 200,
+				headers: { "Content-Type": "application/json" },
+			});
+		};
+
+		const client = new TypeSafeClient({ apiKey: "test-key", fetch: mockFetch });
+		const provider = new JevProvider(client);
+
+		await expect(
+			provider.createDecision({
+				model: "",
+				state: "Text",
+				questions: {
+					is_slop: { type: "noul", instructions: "slop?" },
+				},
+			}),
+		).rejects.toThrowErrorMatchingInlineSnapshot(
+			`[Error: Provider (jev) returned invalid response: missing answers object]`,
+		);
+	});
 });

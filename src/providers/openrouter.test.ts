@@ -131,4 +131,50 @@ describe("OpenRouterProvider", () => {
 
 		expect(JSON.parse(capturedInit?.body as string).model).toBe("custom-model");
 	});
+
+	it("throws descriptive error when gateway returns HTML with status 200", async () => {
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async () => {
+				return new Response("<html><body>502 Bad Gateway</body></html>", {
+					status: 200,
+					headers: { "Content-Type": "text/html" },
+				});
+			}),
+		);
+
+		const provider = new OpenRouterProvider();
+		await expect(
+			provider.createDecision({
+				model: "",
+				state: "Text",
+				questions: { is_slop: { type: "noul", instructions: "slop?" } },
+			}),
+		).rejects.toThrowErrorMatchingInlineSnapshot(
+			`[Error: Provider (openrouter) returned invalid response: received non-JSON response "<html><body>502 Bad Gateway</body></html>"]`,
+		);
+	});
+
+	it("throws descriptive error when response lacks answers object", async () => {
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async () => {
+				return new Response(JSON.stringify({ model: "typesafe/jev-1.13" }), {
+					status: 200,
+					headers: { "Content-Type": "application/json" },
+				});
+			}),
+		);
+
+		const provider = new OpenRouterProvider();
+		await expect(
+			provider.createDecision({
+				model: "",
+				state: "Text",
+				questions: { is_slop: { type: "noul", instructions: "slop?" } },
+			}),
+		).rejects.toThrowErrorMatchingInlineSnapshot(
+			`[Error: Provider (openrouter) returned invalid response: missing answers object]`,
+		);
+	});
 });

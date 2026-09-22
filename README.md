@@ -73,7 +73,7 @@ Pass the output to your AI agent:
 
 Evaluation separates line-level checks (spotting specific patterns or phrases) from document-level checks (evaluating tone or overall structure).
 
-Documents have hundreds of lines, but the number of rules is fixed. Sending one API request per line would mean hundreds of calls. Instead, `slop-grader` dynamically groups lines into batches sized to fit the model's context budget (up to 255 lines per batch) and evaluates each rule across its batch in a single call.
+Documents have hundreds of lines, but the number of rules is fixed. Sending one API request per line would mean hundreds of calls. Instead, `slop-grader` dynamically groups lines into batches sized to fit the model's context budget (up to 255 lines per batch) and evaluates each rule across its batch in a single call. Every batch response is verified for complete answer-to-question parity; any dropped questions halt execution immediately without caching incomplete results.
 
 Document rules run in a single request across the entire text.
 

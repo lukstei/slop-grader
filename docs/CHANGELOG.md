@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.2.6](https://github.com/lukstei/slop-grader/compare/v0.2.5...v0.2.6)
+
+### Bug Fixes
+- Fail immediately on incomplete provider answer sets instead of reporting missing checks as clean lines.
+- Catch and report non-JSON provider responses (such as gateway HTML error pages) with explicit provider errors.
+
 ## [v0.2.5](https://github.com/lukstei/slop-grader/compare/v0.2.4...v0.2.5)
 
 ### Features

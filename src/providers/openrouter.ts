@@ -35,6 +35,30 @@ export class OpenRouterProvider implements Provider {
 			throw new Error(`OpenRouter API error (${res.status}): ${text}`);
 		}
 
-		return (await res.json()) as { answers: Record<string, Answers> };
+		const text = await res.text();
+		let parsed: { answers?: Record<string, Answers> };
+		try {
+			parsed = JSON.parse(text);
+		} catch {
+			const detail = text
+				? `: received non-JSON response "${text.slice(0, 80).trim()}"`
+				: "";
+			throw new Error(
+				`Provider (${this.name}) returned invalid response${detail}`,
+			);
+		}
+
+		if (
+			typeof parsed !== "object" ||
+			parsed === null ||
+			typeof parsed.answers !== "object" ||
+			parsed.answers === null
+		) {
+			throw new Error(
+				`Provider (${this.name}) returned invalid response: missing answers object`,
+			);
+		}
+
+		return parsed as { answers: Record<string, Answers> };
 	}
 }

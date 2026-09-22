@@ -41,6 +41,23 @@ export class JevProvider implements Provider {
 			questions,
 		});
 
+		const raw = result as { answers?: Record<string, Answers> } | string | null;
+		if (
+			typeof raw !== "object" ||
+			raw === null ||
+			!("answers" in raw) ||
+			typeof raw.answers !== "object" ||
+			raw.answers === null
+		) {
+			const detail =
+				typeof raw === "string"
+					? `: received non-JSON response "${raw.slice(0, 80).trim()}"`
+					: ": missing answers object";
+			throw new Error(
+				`Provider (${this.name}) returned invalid response${detail}`,
+			);
+		}
+
 		const answers: Record<string, Answers> = {};
 		for (const [id, answer] of Object.entries(result.answers)) {
 			switch (answer.type) {

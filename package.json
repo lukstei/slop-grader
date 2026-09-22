@@ -23,6 +23,7 @@
 		"slop-grader": "dist/slop-grader.mjs"
 	},
 	"scripts": {
+    "run:test": "node src/main.ts -r no-ai-slop -r grammar-english --stats examples/slop.md",
 		"build": "node esbuild.config.js",
 		"typecheck": "tsc --noEmit",
 		"check": "biome check --write",

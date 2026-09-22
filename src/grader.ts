@@ -283,6 +283,24 @@ async function prefilterJobs(
 	return { jobs, cacheHits };
 }
 
+export function assertCompleteAnswers(
+	answers: Record<string, Answers> | undefined,
+	expectedIds: string[],
+	providerName: string,
+): asserts answers is Record<string, Answers> {
+	if (typeof answers !== "object" || answers === null) {
+		throw new Error(
+			`Provider (${providerName}) returned invalid response: missing answers object`,
+		);
+	}
+	const missing = expectedIds.filter((id) => !(id in answers));
+	if (missing.length > 0) {
+		throw new Error(
+			`Provider (${providerName}) returned incomplete answers: missing ${missing.length} of ${expectedIds.length} answers`,
+		);
+	}
+}
+
 async function evaluateJobs(
 	dirtyJobs: RuleJob[],
 	provider: Provider,
@@ -298,6 +316,8 @@ async function evaluateJobs(
 						state,
 						questions: batchQuestions,
 					});
+					const expectedIds = Object.keys(batchQuestions);
+					assertCompleteAnswers(decision?.answers, expectedIds, provider.name);
 					for (const [id, answer] of Object.entries(decision.answers)) {
 						job.answers[id] = answer;
 					}
@@ -378,6 +398,8 @@ export async function gradeDocument(
 		state: text,
 		questions,
 	});
+	const expectedIds = Object.keys(questions);
+	assertCompleteAnswers(decision?.answers, expectedIds, provider.name);
 	return {
 		scores: extractDocumentScores(decision.answers),
 		flags: extractDocumentFlags(decision.answers),
