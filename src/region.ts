@@ -7,6 +7,12 @@ export type LineRegion = LineIndex[];
 
 export function buildRegions(targetIndices: LineIndex[]): LineRegion[] {
 	if (targetIndices.length === 0) return [];
+	for (let i = 1; i < targetIndices.length; i++) {
+		assert(
+			targetIndices[i] > targetIndices[i - 1],
+			"targetIndices must be strictly ascending",
+		);
+	}
 	const regions: LineRegion[] = [];
 	let currentRegion: LineRegion = [targetIndices[0]];
 

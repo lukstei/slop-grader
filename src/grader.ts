@@ -26,7 +26,7 @@ const THRESHOLD = 0.8;
 // ── Pure / Deterministic ─────────────────────────────────────────────────────
 
 export function parseLines(text: string): string[] {
-	return text.split(/\r?\n/).map((line) => line.replace(/\r$/, ""));
+	return text.split(/\r?\n/);
 }
 
 export function splitRules(raw: Record<string, Rule>[]): RuleSet {

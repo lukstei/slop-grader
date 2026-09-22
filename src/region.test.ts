@@ -47,4 +47,13 @@ describe("region", () => {
 			`[AssertionError: splitIndex out of bounds]`,
 		);
 	});
+
+	it("buildRegions asserts targetIndices are strictly ascending", () => {
+		expect(() => buildRegions([20, 15])).toThrowErrorMatchingInlineSnapshot(
+			`[AssertionError: targetIndices must be strictly ascending]`,
+		);
+		expect(() => buildRegions([10, 10])).toThrowErrorMatchingInlineSnapshot(
+			`[AssertionError: targetIndices must be strictly ascending]`,
+		);
+	});
 });

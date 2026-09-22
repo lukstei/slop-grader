@@ -3,7 +3,6 @@ import {
 	batchRegions,
 	buildBatchRequest,
 	estimateRegionTokens,
-	isSorted,
 	lineMarker,
 	type QuestionBatch,
 } from "./batch.ts";
@@ -112,12 +111,28 @@ describe("batch", () => {
 		expect(result.state).toContain("L0011| Line 11\n...\nL0041| Line 41");
 	});
 
-	it("isSorted validates strictly ascending arrays", () => {
-		expect(isSorted([])).toBe(true);
-		expect(isSorted([0])).toBe(true);
-		expect(isSorted([0, 1, 2, 10])).toBe(true);
-		expect(isSorted([0, 1, 1, 2])).toBe(false);
-		expect(isSorted([2, 1])).toBe(false);
+	it("batchRegions splits 2-element region with accurate non-zero tokenCount", () => {
+		const allLines = ["Alpha line", "Beta line"];
+		const qDef = {
+			type: "noul" as const,
+			instructions: "Check slop",
+		};
+		const batches = batchRegions([[0, 1]], allLines, "test_rule", qDef, 40);
+		expect(batches.length).toBe(2);
+		expect(batches[0].tokenCount).toBeGreaterThan(0);
+		expect(batches[1].tokenCount).toBeGreaterThan(0);
+	});
+
+	it("batchRegions emits single oversized target without throwing", () => {
+		const allLines = ["Single huge line"];
+		const qDef = {
+			type: "noul" as const,
+			instructions: "Check slop",
+		};
+		const batches = batchRegions([[0]], allLines, "test_rule", qDef, 1);
+		expect(batches.length).toBe(1);
+		expect(batches[0].regions).toEqual([[0]]);
+		expect(batches[0].tokenCount).toBeGreaterThan(0);
 	});
 
 	it("buildBatchRequest throws if regions produce overlapping or unsorted indices", () => {

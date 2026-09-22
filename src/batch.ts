@@ -58,59 +58,50 @@ export function batchRegions(
 		assert(region !== undefined, "region must exist in non-empty queue");
 		const regionTokens = estimateRegionTokens(region, allLines, questionTokens);
 
-		if (currentBatch.length > 0) {
-			if (
-				currentTokens + regionTokens <= maxTokens &&
-				currentTargets + region.length <= MAX_BATCH_SIZE
-			) {
-				currentBatch.push(region);
-				currentTokens += regionTokens;
-				currentTargets += region.length;
-			} else {
-				batches.push({
-					ruleId,
-					question,
-					tokenCount: currentTokens,
-					regions: currentBatch,
-				});
-				currentBatch = [];
-				currentTokens = 0;
-				currentTargets = 0;
-				queue.unshift(region);
-			}
-		} else {
-			if (regionTokens <= maxTokens && region.length <= MAX_BATCH_SIZE) {
-				currentBatch.push(region);
-				currentTokens += regionTokens;
-				currentTargets += region.length;
-			} else {
-				assert(
-					region.length > 1,
-					"Single target exceeds max batch size/tokens",
-				);
-				let splitIndex = Math.min(region.length - 2, MAX_BATCH_SIZE - 1);
-				let leftTokens = 0;
-				while (splitIndex > 0) {
-					const [left] = splitRegion(region, splitIndex);
-					leftTokens = estimateRegionTokens(left, allLines, questionTokens);
-					if (leftTokens <= maxTokens && left.length <= MAX_BATCH_SIZE) {
-						break;
-					}
-					splitIndex--;
-				}
+		if (
+			currentBatch.length > 0 &&
+			(currentTokens + regionTokens > maxTokens ||
+				currentTargets + region.length > MAX_BATCH_SIZE)
+		) {
+			batches.push({
+				ruleId,
+				question,
+				tokenCount: currentTokens,
+				regions: currentBatch,
+			});
+			currentBatch = [];
+			currentTokens = 0;
+			currentTargets = 0;
+		}
 
-				const [left, right] = splitRegion(region, splitIndex);
-				batches.push({
-					ruleId,
-					question,
-					tokenCount: leftTokens,
-					regions: [left],
-				});
-				currentBatch = [];
-				currentTokens = 0;
-				currentTargets = 0;
-				queue.unshift(right);
+		if (regionTokens <= maxTokens && region.length <= MAX_BATCH_SIZE) {
+			currentBatch.push(region);
+			currentTokens += regionTokens;
+			currentTargets += region.length;
+		} else if (region.length === 1) {
+			batches.push({
+				ruleId,
+				question,
+				tokenCount: regionTokens,
+				regions: [region],
+			});
+		} else {
+			let splitIndex = Math.min(region.length - 2, MAX_BATCH_SIZE - 1);
+			let [left, right] = splitRegion(region, splitIndex);
+			let leftTokens = estimateRegionTokens(left, allLines, questionTokens);
+			while (splitIndex > 0 && leftTokens > maxTokens) {
+				splitIndex--;
+				[left, right] = splitRegion(region, splitIndex);
+				leftTokens = estimateRegionTokens(left, allLines, questionTokens);
 			}
+
+			batches.push({
+				ruleId,
+				question,
+				tokenCount: leftTokens,
+				regions: [left],
+			});
+			queue.unshift(right);
 		}
 	}
 
@@ -126,21 +117,14 @@ export function batchRegions(
 	return batches;
 }
 
-export function isSorted(numbers: number[]): boolean {
-	for (let i = 1; i < numbers.length; i++) {
-		if (numbers[i] <= numbers[i - 1]) return false;
-	}
-	return true;
-}
-
 export function buildBatchRequest(
 	batch: QuestionBatch,
 	allLines: string[],
 ): { state: string; batchQuestions: Record<string, NoulQuestion> } {
 	assert(batch.regions.length > 0, "batch must not be empty");
-	const lineIndices: LineIndex[] = [];
 	const stateLines: string[] = [];
 	const batchQuestions: Record<string, NoulQuestion> = {};
+	let prevEnd = -1;
 
 	for (let r = 0; r < batch.regions.length; r++) {
 		if (r > 0) {
@@ -152,8 +136,13 @@ export function buildBatchRequest(
 			allLines.length - 1,
 			region[region.length - 1] + CONTEXT_LINES,
 		);
+		assert(
+			start > prevEnd,
+			"batch line indices must be sorted and non-overlapping",
+		);
+		prevEnd = end;
+
 		for (let i = start; i <= end; i++) {
-			lineIndices.push(i);
 			stateLines.push(`${lineMarker(i)}| ${allLines[i]}`);
 		}
 		for (const idx of region) {
@@ -164,11 +153,6 @@ export function buildBatchRequest(
 			};
 		}
 	}
-
-	assert(
-		isSorted(lineIndices),
-		"batch line indices must be sorted and non-overlapping",
-	);
 
 	return { state: stateLines.join("\n"), batchQuestions };
 }
