@@ -22,6 +22,7 @@ Runs every rule against every line in parallel. No skimming, no missed lines.
 - [Development](#development)
 - [Changelog](#changelog)
 - [Contributing](#contributing)
+- [Roadmap](#roadmap)
 
 ## How it works
 
@@ -470,6 +471,41 @@ See [CHANGELOG](docs/CHANGELOG.md) for release history and notable changes.
 ## Contributing
 
 See [CONTRIBUTING](CONTRIBUTING.md) for contribution guidelines, development setup, and coding best practices.
+
+## Roadmap
+
+Planned features we'd like to bring to slop-grader. Have an idea? [Open an issue](https://github.com/lukstei/slop-grader/issues).
+
+- [x] Structured JSON output with `--json` ([v0.1.5](docs/CHANGELOG.md#v015))
+- [x] Execution statistics with `--stats` ([v0.1.6](docs/CHANGELOG.md#v016))
+- [x] Custom model override with `--model` ([v0.1.7](docs/CHANGELOG.md#v017))
+- [x] Debug payload logging with `--debug` ([v0.1.7](docs/CHANGELOG.md#v017))
+- [x] Markdown-authored rulesets ([v0.2.0](docs/CHANGELOG.md#v020))
+- [x] Offline ruleset validation with `--check` ([v0.2.0](docs/CHANGELOG.md#v020))
+- [x] Document-level scoring rules ([v0.2.1](docs/CHANGELOG.md#v021))
+- [x] Ruleset listing with `--list-rulesets` ([v0.2.3](docs/CHANGELOG.md#v023))
+- [x] Incremental line-level caching ([v0.2.5](docs/CHANGELOG.md#v025))
+- [ ] Local web UI for in-browser grading (`slop-grader --ui`)
+- [ ] Official GitHub Action for CI and pull requests
+- [ ] Inline pull request review comments and score summaries
+- [ ] Markdown mode to skip code blocks and syntax
+- [ ] Web playground to test rulesets and generate CLI commands
+- [ ] Remediation guidance and fix instructions in reports
+- [ ] Expanded rulesets for git commits, PR descriptions, and ADRs
+- [ ] Legal and policy document rulesets (Terms of Service, Privacy Policies)
+- [ ] Standard input support (`cat doc.md | slop-grader -`)
+- [ ] Token usage and estimated API costs in `--stats`
+- [ ] Standalone binaries via Homebrew and APT (no Node runtime required)
+- [ ] Interactive CLI prompt mode
+- [ ] Agent skill installer (`slop-grader init --skill`)
+- [ ] JSON and YAML field targeting with JSON Pointers
+- [ ] YAML support for authoring rulesets
+- [ ] Copy reports directly to clipboard (`--clipboard`)
+- [ ] Dry-run mode to inspect payloads without API calls (`--dry-run`)
+- [ ] Custom provider base URLs for proxies and self-hosted models (`--base-url`)
+- [ ] Custom confidence thresholds per rule
+- [ ] Configurable request concurrency (`--concurrency`)
+- [ ] Verbose operational logs (`-v` / `--verbose`)
 
 ## License
 

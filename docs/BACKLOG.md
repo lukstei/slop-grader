@@ -6,6 +6,7 @@
 - **Current State:** Analyzed and concisely described based on the current codebase.
 - **Objective:** Concise description of the goal.
 - **Agent Triage:** Max 1–3 lines. Ideas, considerations, or edge cases from the agent. Keep writing concise. No implementation outlines, no pre-planning.
+- **Roadmap:** When adding an item, also add it to the Roadmap in `README.md` if it is a user-impacting feature.
 
 ---
 
