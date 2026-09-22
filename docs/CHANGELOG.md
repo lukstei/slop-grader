@@ -1,22 +1,22 @@
 # Changelog
 
-## [Unreleased]
-
-### Features
-- Batch lines by token budget during evaluation to reduce API calls.
-
-## [0.2.5] - 2026-09-21
+## [v0.2.5](https://github.com/lukstei/slop-grader/compare/v0.2.4...v0.2.5)
 
 ### Features
 - Add incremental line-level evaluation caching.
 
-## [0.2.3] - 2026-09-21
+## [v0.2.4](https://github.com/lukstei/slop-grader/compare/v0.2.3...v0.2.4)
+
+### Features
+- Batch lines by token budget during evaluation to reduce API calls.
+
+## [v0.2.3](https://github.com/lukstei/slop-grader/compare/v0.2.2...v0.2.3)
 
 ### Features
 - Add `--list-rulesets` flag to view available built-in rulesets and metadata.
 - Split composite grammar rules into granular categories and checks.
 
-## [0.2.2] - 2026-09-21
+## [v0.2.2](https://github.com/lukstei/slop-grader/compare/v0.2.1...v0.2.2)
 
 ### Features
 - Expand and reorganize English and German grammar rulesets.
@@ -24,37 +24,49 @@
 ### Bug Fixes
 - Ignore intra-word underscores when parsing Markdown italics.
 
-## [0.2.1] - 2026-09-21
+## [v0.2.1](https://github.com/lukstei/slop-grader/compare/v0.2.0...v0.2.1)
 
 ### Features
 - Support document-level rules alongside line-level rules.
 - Add `--help` (`-h`) and `--version` (`-v`) CLI flags.
 
-## [0.2.0] - 2026-09-20
+## [v0.2.0](https://github.com/lukstei/slop-grader/compare/v0.1.7...v0.2.0)
 
 ### Features
 - Support custom rulesets authored in Markdown syntax.
-- Add `--check` (`-c`) flag for offline ruleset syntax validation without an API key.
+- Add `--check` (`-c`) flag for offline ruleset validation without an API key.
 - Update default evaluation model to `~typesafe/jev-latest`.
 
-## [0.1.7] - 2026-09-20
+## [v0.1.7](https://github.com/lukstei/slop-grader/compare/v0.1.6...v0.1.7)
 
 ### Features
 - Add `--model` flag to override the default evaluation model.
 - Add `--debug` (`-d`) flag to log API requests and responses to stderr.
 - Add `bold_lead_in_list` rule and support multi-letter keys and markdown headers in reports.
 
-## [0.1.6] - 2026-09-20
+## [v0.1.6](https://github.com/lukstei/slop-grader/compare/v0.1.5...v0.1.6)
 
 ### Features
 - Add `--stats` (`-s`) flag to display execution metrics.
 
-## [0.1.5] - 2026-09-20
+## [v0.1.5](https://github.com/lukstei/slop-grader/compare/v0.1.4...v0.1.5)
 
 ### Features
 - Add `--json` (`-j`) flag to output violations in structured JSON.
 
-## [0.1.1] - 2026-09-20
+## [v0.1.4](https://github.com/lukstei/slop-grader/compare/v0.1.3...v0.1.4)
+
+- Internal technical changes
+
+## [v0.1.3](https://github.com/lukstei/slop-grader/compare/v0.1.2...v0.1.3)
+
+- Internal technical changes
+
+## [v0.1.2](https://github.com/lukstei/slop-grader/compare/v0.1.1...v0.1.2)
+
+- Internal technical changes
+
+## [v0.1.1](https://github.com/lukstei/slop-grader/releases/tag/v0.1.1)
 
 ### Features
 - Initial release of `slop-grader` CLI and built-in rulesets.
