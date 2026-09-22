@@ -60,7 +60,7 @@ try {
 console.log(`→ Dispatching GitHub Actions release (${bump})...`);
 try {
 	run(`gh workflow run publish.yml -f bump=${bump}`);
-	await timers.setTimeout(2000);
+	await timers.setTimeout(7000);
 } catch {
 	abort("Failed to trigger GitHub Actions workflow.");
 }
