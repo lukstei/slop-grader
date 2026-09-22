@@ -5,8 +5,8 @@
 
 ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/lukstei/slop-grader/ci.yml)
 [![NPM Version](https://img.shields.io/npm/v/@lukstei/slop-grader.svg)](https://www.npmjs.com/package/@lukstei/slop-grader)
-![unpacked size](https://img.shields.io/npm/unpacked-size/@lukstei/slop-grader)
-![NPM Downloads](https://img.shields.io/npm/dm/@lukstei/slop-grader)
+[![unpacked size](https://img.shields.io/npm/unpacked-size/@lukstei/slop-grader)](https://www.npmjs.com/package/@lukstei/slop-grader)
+[![NPM Downloads](https://img.shields.io/npm/dm/@lukstei/slop-grader)](https://www.npmjs.com/package/@lukstei/slop-grader)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 Rule-based slop grader for text files, powered by [Jev](https://typesafe.ai).

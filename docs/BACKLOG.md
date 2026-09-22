@@ -124,3 +124,29 @@
 - **Objective:** Display estimated or reported API costs (and token counts) in the `--stats` summary and JSON output.
 - **Agent Triage:** Capture usage metadata (tokens or billed cost) from provider responses when available, falling back to local token estimation via `tokenx` with model pricing tables. Format costs cleanly (e.g. `API cost: $0.0042`) in `formatStats` and include raw numeric fields in `--json`.
 
+### [ ] 24. Support Stdin Mode with `-`
+- **Current State:** The CLI expects a filesystem path as the positional file argument (`src/main.ts`), reading it with `readFile(file, "utf8")` and resolving it with `resolve(file)`. Passing `-` attempts to open a file named `"-"` from disk, and piping into `slop-grader` without a file argument fails with the usage error.
+- **Objective:** Allow passing `-` as the target file argument to read document content from standard input, enabling Unix pipelines (e.g. `cat file.md | slop-grader -r slop -`).
+- **Agent Triage:** Read `process.stdin` when `file === "-"`, handling EOF and empty input cleanly. Use `"<stdin>"` or `"-"` as the display and JSON `file` label instead of passing `"-"` to `path.resolve`.
+
+### [ ] 25. Markdown Mode with Fail-Safe Fallback
+- **Current State:** `parseLines` in `src/grader.ts` processes all input lines uniformly as raw text. Code blocks and inline snippets in Markdown documents are evaluated as natural language, producing false-positive slop flags on programming syntax. The internal AST parser (`src/markdown/parsing.ts`) is only used for rule definitions.
+- **Objective:** Add a Markdown mode (auto-enabled for `.md` files or via a CLI flag) that excludes fenced code blocks and code snippets from evaluation while preserving original line numbering. If Markdown parsing fails or throws, automatically fall back to standard raw line grading.
+- **Agent Triage:** Preserve 1-based line mapping by blanking or masking code block lines rather than dropping them. Wrap AST parsing in a fail-safe try/catch that logs to stderr (in verbose mode) and reverts cleanly to plain text parsing on any syntax or parser failure.
+
+### [ ] 26. JSON/YAML Mode with JSON Pointer Targeting
+- **Current State:** Rules support only flat `line` or `document` scopes across unparsed text. Evaluating structured specifications like OpenAPI or AsyncAPI documents grades schema keywords, paths, and type definitions indiscriminately alongside human-facing documentation.
+- **Objective:** Add a JSON/YAML mode that allows rules to target specific nodes or fields (e.g. `description`, `summary`) using JSON pointers or wildcard pointer patterns, scoping evaluations strictly to relevant text while preserving source line mappings.
+  Probably we should still feed the whole document, because otherwise it will get complicated and might lead to a lot of fragmented requests, but apply the questions only to the targeteted lines.
+- **Agent Triage:** Use a position-aware parser (CST/AST) to map matching pointer nodes back to exact source file lines. Support wildcard patterns (e.g. `/paths/*/*/description`) and fall back to standard line grading if parsing fails.
+
+### [ ] 27. Legal and Policy Document Rulesets (TOS, Privacy Policy)
+- **Current State:** Built-in rulesets in `rules/` only cover grammar, technical documentation, article structure, and general AI slop. There are no rulesets or document-level criteria for legal and policy documents such as Terms of Service, Privacy Policies, or EULAs.
+- **Objective:** Add rulesets tailored for legal and compliance documents that flag predatory or ambiguous clauses (e.g. unilateral modification without notice, overly broad data sharing, unbounded liability disclaimers) and audit document-level completeness (e.g. missing dispute resolution, GDPR/CCPA data rights, governing law, contact details).
+- **Agent Triage:** Combine line rules for predatory phrasing with document score rules for structural completeness. Include a disclaimer that lint results provide drafting checks rather than legal advice.
+
+### [ ] 28. YAML Support for Rulesets
+- **Current State:** Rulesets are loaded from Markdown (`.md`) or JSON (`.json`) files via `loadRuleset`. Markdown works cleanly for simple prose rules, but complex configurations (JSON pointers, multi-threshold boundaries, pre-filters, remediation text) strain Markdown headings and lists, while JSON lacks comments and clean multiline strings.
+- **Objective:** Support YAML (`.yaml`/`.yml`) for authoring rulesets—either transitioning completely to YAML or using it specifically for complex rulesets with advanced configuration options.
+- **Agent Triage:** YAML multiline block scalars (`|`) and comments fit complex prompt definitions well. Weigh dependency weight (e.g. `yaml`) and decide whether to migrate all rulesets or keep Markdown for simple rules and reserve YAML for complex ones.
+
