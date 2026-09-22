@@ -1,4 +1,4 @@
-# Incremental Line Caching Architecture
+# Incremental Line Caching
 
 `slop-grader` caches line-level rule evaluations to disk so repeated runs during editing loops evaluate only modified lines. Unchanged lines resolve from the cache with zero API calls.
 
@@ -6,24 +6,21 @@
 
 ## Cache Keys & Invalidation
 
-Cache entries are keyed by content hashes rather than document line numbers, allowing lines to move or duplicate without invalidating scores.
+Cache entries use content hashes instead of document line numbers, so lines can move or repeat without invalidating scores.
 
-### 1. Line Content Hashing
-```ts
-hashLine(text: string): string
-```
-- Computed via SHA-256 over `text.trim()` truncated to 16 hex characters (64 bits of entropy).
-- Stripping leading and trailing whitespace ensures that indent adjustments or line-ending differences (`\r\n` vs `\n`) do not trigger cache misses. Empty or whitespace-only lines are ignored by the line parser and never cached.
+### Line Content Hashing
 
-### 2. Rule Definition Hashing
-```ts
-hashRule(qDef: NoulQuestion): string
-```
-- Computed via SHA-256 over the canonical JSON payload containing `instructions` and `criteria`, truncated to 16 hex characters.
-- Modifying a prompt, adding a criterion bullet, or altering instructions in a Markdown ruleset generates a new rule hash, invalidating stale cache entries for that rule across all documents.
+- Computed with SHA-256 over trimmed line text, truncated to 16 hex characters (64 bits of entropy).
+- Trimming leading and trailing whitespace ensures that indent adjustments and line-ending differences (`\r\n` vs `\n`) do not trigger cache misses. Empty or whitespace-only lines are ignored and never cached.
 
-### 3. Provider and Model Namespacing
-- Cache files are partitioned by provider and model. Running evaluations against `jev-1.13.0` does not mix with evaluations from alternative models or providers.
+### Rule Definition Hashing
+
+- Computed with SHA-256 over canonical JSON containing instructions and criteria, truncated to 16 hex characters.
+- Changing a prompt, adding a criterion, or altering instructions produces a new rule hash, invalidating stale cache entries for that rule across all documents.
+
+### Provider and Model Namespacing
+
+- Cache files are partitioned by provider and model. Running evaluations against `jev-1.13.0` does not mix with evaluations from other models or providers.
 
 ---
 
@@ -50,8 +47,8 @@ hashRule(qDef: NoulQuestion): string
         <sanitized-rule-id>.json.gz
 ```
 
-- **Path Sanitization:** Model and rule names replace slashes, backslashes, colons, and leading tildes with double hyphens (`--`). Directory traversal markers (`.` and `..`) are rejected.
-- **Example Path:**
+- **Path sanitization:** Model and rule names replace slashes, backslashes, colons, and leading tildes with double hyphens (`--`). Directory traversal markers (`.` and `..`) are rejected.
+- **Example path:**
   `~/Library/Caches/slop-grader/v1/openrouter/typesafe--jev-1.13.0/banned_word.json.gz`
 
 ### On-Disk File Format
@@ -68,62 +65,61 @@ Each rule stores its evaluations in an independent, Gzip-compressed JSON file co
 }
 ```
 
-- **Atomic Writes:** Saves compress to a temporary sibling file (`${filePath}.${randomUUID()}.tmp`) and swap into place using `fs.rename`. Because the temporary file shares the parent directory with the target file, the rename is an atomic filesystem operation on the same volume.
+- **Atomic writes:** Saves compress to a temporary sibling file in the same directory and swap into place with an atomic rename on the same volume.
 
 ---
 
 ## Data Structures & Memory Management
 
-### Array Storage vs. Map Allocation
+### Array Storage
 
-`RuleCache` retains its entries as an array of `[hash, score]` tuples up to 25,000 entries.
+Entries are stored as an array of `[hash, score]` pairs up to 25,000 entries.
 
-- **Allocation Avoidance:** Reconstituting a 25,000-entry `Map` for each rule adds object allocation and garbage collection overhead during single-pass lookups. An array of primitive tuples parses directly from JSON and serializes back to disk without intermediate conversions.
-- **Single-Pass Matching:** During matching, `getMatches` iterates the cache array and tests against a small map of the active document's line hashes (`lineHashes.get(hash)`).
+- **Allocation avoidance:** Parsing an array of primitive pairs directly from JSON and serializing back to disk avoids the object allocation and garbage collection overhead of large map lookups.
+- **Single-pass matching:** During evaluation, the cache scans the array against a lookup map of the active document's line hashes.
 
-### LRU Eviction & Deduplication
+### Eviction & Deduplication
 
-- **Capacity Limit:** Default maximum of 25,000 entries per rule (`DEFAULT_MAX_ENTRIES`).
-- **LRU Order:** When adding fresh evaluations, existing entries matching the incoming hashes are removed, and the fresh entries are prepended to the head of the array. The array is truncated to `maxEntries`.
-- **Deduplication:** Fresh entries pass through a local `Map` before prepending. If a document contains repeated identical lines, the cache retains only one entry per unique line hash.
+- **Capacity limit:** Default maximum of 25,000 entries per rule.
+- **LRU order:** When adding fresh evaluations, existing entries matching the incoming hashes are removed, and the new entries are prepended to the head of the array. The array is then truncated to 25,000 entries.
+- **Deduplication:** Repeated identical lines within a document are deduplicated before prepending, storing only one entry per unique line hash.
 
 ### Memory Protection
 
-- **Disk-Backed Rules:** `LineCacheManager` does not retain rule caches in an in-memory registry. When evaluating 100+ rules, caches load on demand and discard once matching completes, keeping working memory bounded.
-- **Sequential Writeback:** When saving dirty rule caches after an API run, `writebackCaches` processes dirty jobs sequentially. This ensures only one 25,000-entry cache is decompressed and buffered in memory at a time.
+- **Disk-backed rules:** Rule caches do not stay resident in memory. Each cache loads on demand for matching and is discarded immediately after, keeping working memory bounded across large rulesets.
+- **Sequential writeback:** Disk saves run sequentially after an API call, so only one 25,000-entry cache is decompressed and buffered in memory at a time.
 
 ---
 
 ## Evaluation Lifecycle
 
 ```text
-Document Lines
+Document lines
       │
       ▼
- indexLines() ──► Map<hash, lineNum[]>
+Map line hashes to line numbers
       │
       ▼
- prefilterJobs()
-   ├── Load Rule Cache (<rule>.json.gz)
-   ├── Match cached hashes ──► Add to cached answers (Cache Hits)
-   └── Collect uncached lines
-      │
-      ▼
- Are uncached lines present?
-   ├── No  ──► Skip API calls; extract flags immediately
-   └── Yes ──► batchLines() ──► Provider API calls
-                  │
-                  ▼
-               writebackCaches() (sequential disk write)
-                  │
-                  ▼
-               extractLineFlags() ──► Terminal Report / JSON
+Check rule caches (<rule>.json.gz)
+    ├── Cache hits ──► Reuse saved scores
+    └── Uncached lines collected
+       │
+       ▼
+Are uncached lines present?
+    ├── No  ──► Skip API calls; extract flags immediately
+    └── Yes ──► Batch lines ──► Provider API calls
+                   │
+                   ▼
+                Sequential disk writeback
+                   │
+                   ▼
+                Terminal report / JSON
 ```
 
-1. **Indexing:** `indexLines` scans the input lines once, mapping each line hash to its line numbers.
-2. **Prefiltering:** Each line rule checks its cache file. Line numbers with cached scores populate the rule's answers directly.
+1. **Indexing:** Scans input lines once and maps each line hash to its line numbers.
+2. **Prefiltering:** Each line rule checks its cache file. Line numbers with cached scores populate results directly.
 3. **Batching:** Only uncached lines are grouped into batch requests. If all lines hit the cache, zero API calls are made.
-4. **Writeback:** If new lines were evaluated by the model, `writebackCaches` loads the cache file, prepends the new evaluations, and writes the updated compressed file atomically.
+4. **Writeback:** When new lines are evaluated by the model, the cache file loads, prepends the new evaluations, and writes the updated compressed file atomically.
 
 ---
 
