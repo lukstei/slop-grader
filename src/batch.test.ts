@@ -5,6 +5,7 @@ import {
 	estimateRegionTokens,
 	isSorted,
 	lineMarker,
+	type QuestionBatch,
 } from "./batch.ts";
 import { buildRegions } from "./region.ts";
 
@@ -36,13 +37,16 @@ describe("batch", () => {
 		};
 		const targetIndices = Array.from({ length: 300 }, (_, i) => i);
 		const regions = buildRegions(targetIndices);
-		const batches = batchRegions(regions, allLines, rule, 100_000);
-		expect(batches.map((b) => b.flat().length)).toMatchInlineSnapshot(`
+		const batches = batchRegions(regions, allLines, "test_rule", rule, 100_000);
+		expect(batches.map((b) => b.regions.flat().length)).toMatchInlineSnapshot(`
 			[
 			  255,
 			  45,
 			]
 		`);
+		expect(batches[0].ruleId).toBe("test_rule");
+		expect(batches[0].question).toEqual(rule);
+		expect(batches[0].tokenCount).toBeGreaterThan(0);
 	});
 
 	it("batchRegions returns empty array for empty regions", () => {
@@ -50,7 +54,7 @@ describe("batch", () => {
 			type: "noul" as const,
 			instructions: "test",
 		};
-		expect(batchRegions([], [], rule)).toMatchInlineSnapshot(`[]`);
+		expect(batchRegions([], [], "test_rule", rule)).toMatchInlineSnapshot(`[]`);
 	});
 
 	it("buildBatchRequest generates formatted state with surrounding context and target questions", () => {
@@ -65,7 +69,13 @@ describe("batch", () => {
 			type: "noul" as const,
 			instructions: "Does this contain slop?",
 		};
-		const result = buildBatchRequest([region], allLines, qDef);
+		const batch: QuestionBatch = {
+			ruleId: "slop_rule",
+			question: qDef,
+			tokenCount: 100,
+			regions: [region],
+		};
+		const result = buildBatchRequest(batch, allLines);
 		expect(result).toMatchInlineSnapshot(`
 			{
 			  "batchQuestions": {
@@ -86,6 +96,22 @@ describe("batch", () => {
 		`);
 	});
 
+	it("buildBatchRequest inserts ellipsis between disjoint regions in state", () => {
+		const allLines = Array.from({ length: 100 }, (_, i) => `Line ${i + 1}`);
+		const qDef = {
+			type: "noul" as const,
+			instructions: "Check slop",
+		};
+		const batch: QuestionBatch = {
+			ruleId: "slop_rule",
+			question: qDef,
+			tokenCount: 200,
+			regions: [[0], [50]],
+		};
+		const result = buildBatchRequest(batch, allLines);
+		expect(result.state).toContain("L0011| Line 11\n...\nL0041| Line 41");
+	});
+
 	it("isSorted validates strictly ascending arrays", () => {
 		expect(isSorted([])).toBe(true);
 		expect(isSorted([0])).toBe(true);
@@ -100,9 +126,14 @@ describe("batch", () => {
 			type: "noul" as const,
 			instructions: "Does this contain slop?",
 		};
-		// Overlapping regions: region [20] and region [15] (out of order and overlapping context)
+		const batch: QuestionBatch = {
+			ruleId: "slop_rule",
+			question: qDef,
+			tokenCount: 0,
+			regions: [[20], [15]],
+		};
 		expect(() =>
-			buildBatchRequest([[20], [15]], allLines, qDef),
+			buildBatchRequest(batch, allLines),
 		).toThrowErrorMatchingInlineSnapshot(
 			`[AssertionError: batch line indices must be sorted and non-overlapping]`,
 		);

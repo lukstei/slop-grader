@@ -28,17 +28,25 @@ export function estimateRegionTokens(
 	return tokens;
 }
 
+export type QuestionBatch = {
+	ruleId: string;
+	question: NoulQuestion;
+	tokenCount: number;
+	regions: LineRegion[];
+};
+
 export function batchRegions(
 	regions: LineRegion[],
 	allLines: string[],
-	rule: NoulQuestion,
+	ruleId: string,
+	question: NoulQuestion,
 	maxTokens = TARGET_BATCH_TOKENS,
-): LineRegion[][] {
+): QuestionBatch[] {
 	assert(maxTokens > 0, "maxTokens must be positive");
 	if (regions.length === 0) return [];
 
-	const questionTokens = estimateTokenCount(JSON.stringify(rule));
-	const batches: LineRegion[][] = [];
+	const questionTokens = estimateTokenCount(JSON.stringify(question));
+	const batches: QuestionBatch[] = [];
 	const queue = [...regions];
 
 	let currentBatch: LineRegion[] = [];
@@ -59,7 +67,12 @@ export function batchRegions(
 				currentTokens += regionTokens;
 				currentTargets += region.length;
 			} else {
-				batches.push(currentBatch);
+				batches.push({
+					ruleId,
+					question,
+					tokenCount: currentTokens,
+					regions: currentBatch,
+				});
 				currentBatch = [];
 				currentTokens = 0;
 				currentTargets = 0;
@@ -76,13 +89,10 @@ export function batchRegions(
 					"Single target exceeds max batch size/tokens",
 				);
 				let splitIndex = Math.min(region.length - 2, MAX_BATCH_SIZE - 1);
+				let leftTokens = 0;
 				while (splitIndex > 0) {
 					const [left] = splitRegion(region, splitIndex);
-					const leftTokens = estimateRegionTokens(
-						left,
-						allLines,
-						questionTokens,
-					);
+					leftTokens = estimateRegionTokens(left, allLines, questionTokens);
 					if (leftTokens <= maxTokens && left.length <= MAX_BATCH_SIZE) {
 						break;
 					}
@@ -90,8 +100,12 @@ export function batchRegions(
 				}
 
 				const [left, right] = splitRegion(region, splitIndex);
-				currentBatch.push(left);
-				batches.push(currentBatch);
+				batches.push({
+					ruleId,
+					question,
+					tokenCount: leftTokens,
+					regions: [left],
+				});
 				currentBatch = [];
 				currentTokens = 0;
 				currentTargets = 0;
@@ -101,7 +115,12 @@ export function batchRegions(
 	}
 
 	if (currentBatch.length > 0) {
-		batches.push(currentBatch);
+		batches.push({
+			ruleId,
+			question,
+			tokenCount: currentTokens,
+			regions: currentBatch,
+		});
 	}
 
 	return batches;
@@ -115,15 +134,19 @@ export function isSorted(numbers: number[]): boolean {
 }
 
 export function buildBatchRequest(
-	batch: LineRegion[],
+	batch: QuestionBatch,
 	allLines: string[],
-	qDef: NoulQuestion,
 ): { state: string; batchQuestions: Record<string, NoulQuestion> } {
-	assert(batch.length > 0, "batch must not be empty");
+	assert(batch.regions.length > 0, "batch must not be empty");
 	const lineIndices: LineIndex[] = [];
+	const stateLines: string[] = [];
 	const batchQuestions: Record<string, NoulQuestion> = {};
 
-	for (const region of batch) {
+	for (let r = 0; r < batch.regions.length; r++) {
+		if (r > 0) {
+			stateLines.push("...");
+		}
+		const region = batch.regions[r];
 		const start = Math.max(0, region[0] - CONTEXT_LINES);
 		const end = Math.min(
 			allLines.length - 1,
@@ -131,12 +154,13 @@ export function buildBatchRequest(
 		);
 		for (let i = start; i <= end; i++) {
 			lineIndices.push(i);
+			stateLines.push(`${lineMarker(i)}| ${allLines[i]}`);
 		}
 		for (const idx of region) {
 			const id = lineMarker(idx);
 			batchQuestions[id] = {
-				...qDef,
-				instructions: `For the line ${id} answer: ${qDef.instructions}`,
+				...batch.question,
+				instructions: `For the line ${id} answer: ${batch.question.instructions}`,
 			};
 		}
 	}
@@ -146,9 +170,5 @@ export function buildBatchRequest(
 		"batch line indices must be sorted and non-overlapping",
 	);
 
-	const state = lineIndices
-		.map((i) => `${lineMarker(i)}| ${allLines[i]}`)
-		.join("\n");
-
-	return { state, batchQuestions };
+	return { state: stateLines.join("\n"), batchQuestions };
 }

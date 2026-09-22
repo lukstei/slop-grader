@@ -245,14 +245,10 @@ async function evaluateJobs(
 	await Promise.all(
 		dirtyJobs.map(async (job) => {
 			const regions = buildRegions(job.uncachedLines);
-			const batches = batchRegions(regions, allLines, job.qDef);
+			const batches = batchRegions(regions, allLines, job.ruleId, job.qDef);
 			await Promise.all(
 				batches.map(async (batch) => {
-					const { state, batchQuestions } = buildBatchRequest(
-						batch,
-						allLines,
-						job.qDef,
-					);
+					const { state, batchQuestions } = buildBatchRequest(batch, allLines);
 					const decision = await provider.createDecision({
 						model: provider.model,
 						state,
