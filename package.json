@@ -1,6 +1,6 @@
 {
 	"name": "@lukstei/slop-grader",
-	"version": "0.2.6",
+	"version": "0.2.7",
 	"description": "Jev-powered, rule-based slop grader for text files",
 	"license": "MIT",
 	"author": "Lukas Steinbrecher",
