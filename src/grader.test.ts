@@ -501,6 +501,92 @@ Third line`;
 		}
 	});
 
+	it("gradeLines handles sparse non-contiguous uncached lines across multiple regions", async () => {
+		const { mkdtemp, rm } = await import("node:fs/promises");
+		const { tmpdir } = await import("node:os");
+		const tempDir = await mkdtemp(join(tmpdir(), "grader-sparse-cache-test-"));
+
+		try {
+			let decisionCalls = 0;
+			const countingProvider: Provider = {
+				name: "jev",
+				model: "jev-1.13.0",
+				async createDecision(req) {
+					decisionCalls++;
+					const answers: Record<string, Answers> = {};
+					for (const id of Object.keys(req.questions)) {
+						answers[id] = {
+							type: "noul",
+							noul: id === "L0031" || id === "L0081" ? 0.95 : 0.05,
+						};
+					}
+					return { answers };
+				},
+			};
+
+			const lineRules = {
+				buzzword: {
+					type: "noul" as const,
+					instructions: "Check buzzwords",
+				},
+			};
+
+			const cacheManager = new LineCacheManager({
+				baseDir: tempDir,
+				provider: countingProvider.name,
+				model: countingProvider.model,
+			});
+
+			const allLines = Array.from(
+				{ length: 100 },
+				(_, i) => `Initial content line ${i + 1}`,
+			);
+
+			// Run 1: Warm entire cache for 100 lines
+			const run1 = await gradeLines(
+				allLines,
+				lineRules,
+				countingProvider,
+				cacheManager,
+			);
+			expect(run1.cacheHits).toBe(0);
+			const initialCalls = decisionCalls;
+
+			// Run 2: Edit line 30 (index 30, marker L0031) and line 80 (index 80, marker L0081)
+			const editedLines = [...allLines];
+			editedLines[30] = "Modified buzzword line at 31";
+			editedLines[80] = "Modified buzzword line at 81";
+
+			const run2 = await gradeLines(
+				editedLines,
+				lineRules,
+				countingProvider,
+				cacheManager,
+			);
+			// 98 lines should hit cache, only the 2 separated lines should be evaluated
+			expect(run2.cacheHits).toBe(98);
+			expect(decisionCalls).toBeGreaterThan(initialCalls);
+			expect(run2.flags.get(30)).toEqual(["buzzword"]);
+			expect(run2.flags.get(80)).toEqual(["buzzword"]);
+			expect(run2.flags.has(0)).toBe(false);
+
+			// Run 3: Hot run on the edited document -> 100% cache hits, zero new calls
+			const callsBeforeRun3 = decisionCalls;
+			const run3 = await gradeLines(
+				editedLines,
+				lineRules,
+				countingProvider,
+				cacheManager,
+			);
+			expect(run3.cacheHits).toBe(100);
+			expect(decisionCalls).toBe(callsBeforeRun3);
+			expect(run3.flags.get(30)).toEqual(["buzzword"]);
+			expect(run3.flags.get(80)).toEqual(["buzzword"]);
+		} finally {
+			await rm(tempDir, { recursive: true, force: true });
+		}
+	});
+
 	it("loadRules loads and splits markdown rule files", async () => {
 		const { lineRules, docRules } = await loadRules([
 			"rules/no-ai-slop.md",

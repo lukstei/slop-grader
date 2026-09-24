@@ -152,7 +152,7 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 const USAGE =
 	"usage: slop-grader [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]";
 
-async function main() {
+export async function main(argv = process.argv.slice(2)) {
 	const {
 		check,
 		rulesPaths,
@@ -167,7 +167,7 @@ async function main() {
 		help,
 		version,
 		listRulesets,
-	} = parseCliArgs();
+	} = parseCliArgs(argv);
 
 	if (help) {
 		console.log(USAGE);

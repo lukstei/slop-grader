@@ -153,4 +153,69 @@ describe("batch", () => {
 			`[AssertionError: batch line indices must be sorted and non-overlapping]`,
 		);
 	});
+
+	it("batchRegions flushes currentBatch when next region exceeds maxTokens", () => {
+		const allLines = Array.from({ length: 150 }, (_, i) => `Line ${i + 1}`);
+		const qDef = {
+			type: "noul" as const,
+			instructions: "Check slop",
+		};
+		const regions = [[0], [50], [100]];
+		const token1 = estimateRegionTokens([0], allLines, 20);
+		const maxTokens = Math.floor(token1 * 1.5);
+		const batches = batchRegions(
+			regions,
+			allLines,
+			"test_rule",
+			qDef,
+			maxTokens,
+		);
+		expect(batches.length).toBe(3);
+		expect(batches.map((b) => b.regions)).toEqual([[[0]], [[50]], [[100]]]);
+	});
+
+	it("batchRegions flushes currentBatch when target count exceeds MAX_BATCH_SIZE", () => {
+		const allLines = Array.from({ length: 350 }, (_, i) => `Line ${i + 1}`);
+		const qDef = {
+			type: "noul" as const,
+			instructions: "Check slop",
+		};
+		const targetIndices1 = Array.from({ length: 200 }, (_, i) => i);
+		const targetIndices2 = Array.from({ length: 100 }, (_, i) => i + 250);
+		const regions = [targetIndices1, targetIndices2];
+		const batches = batchRegions(
+			regions,
+			allLines,
+			"test_rule",
+			qDef,
+			1_000_000,
+		);
+		expect(batches.length).toBe(2);
+		expect(batches[0].regions).toEqual([targetIndices1]);
+		expect(batches[1].regions).toEqual([targetIndices2]);
+	});
+
+	it("batchRegions progressively decrements splitIndex when left slice exceeds maxTokens", () => {
+		const allLines = [
+			"A very very very very very long text line that uses a huge amount of tokens",
+			"Another extremely long text line full of detailed description and verbose tokens",
+			"A third verbose line with lots of tokens",
+			"Short 1",
+			"Short 2",
+		];
+		const qDef = {
+			type: "noul" as const,
+			instructions: "Check slop",
+		};
+		const token3Lines = estimateRegionTokens([0, 1, 2], allLines, 20);
+		const maxTokens = Math.floor(token3Lines * 0.7);
+		const batches = batchRegions(
+			[[0, 1, 2, 3, 4]],
+			allLines,
+			"test_rule",
+			qDef,
+			maxTokens,
+		);
+		expect(batches.length).toBeGreaterThan(1);
+	});
 });
