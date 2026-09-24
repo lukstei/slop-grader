@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	batchRegions,
 	buildBatchRequest,
+	estimateLineTokens,
 	estimateRegionTokens,
 	lineMarker,
 	type QuestionBatch,
@@ -21,10 +22,18 @@ describe("batch", () => {
 		`);
 	});
 
+	it("estimateLineTokens computes token counts per line", () => {
+		const allLines = ["Line 1", "Line 2", "Line 3"];
+		const lineTokens = estimateLineTokens(allLines);
+		expect(lineTokens.length).toBe(3);
+		expect(lineTokens.every((t) => t > 8)).toBe(true);
+	});
+
 	it("estimateRegionTokens includes context and question tokens", () => {
 		const allLines = ["Line 1", "Line 2", "Line 3"];
+		const lineTokens = estimateLineTokens(allLines);
 		const region = [1];
-		const tokens = estimateRegionTokens(region, allLines, 20);
+		const tokens = estimateRegionTokens(region, lineTokens, 20);
 		expect(tokens).toBeGreaterThan(0);
 	});
 
@@ -36,7 +45,14 @@ describe("batch", () => {
 		};
 		const targetIndices = Array.from({ length: 300 }, (_, i) => i);
 		const regions = buildRegions(targetIndices);
-		const batches = batchRegions(regions, allLines, "test_rule", rule, 100_000);
+		const lineTokens = estimateLineTokens(allLines);
+		const batches = batchRegions(
+			regions,
+			lineTokens,
+			"test_rule",
+			rule,
+			100_000,
+		);
 		expect(batches.map((b) => b.regions.flat().length)).toMatchInlineSnapshot(`
 			[
 			  255,
@@ -108,7 +124,9 @@ describe("batch", () => {
 			regions: [[0], [50]],
 		};
 		const result = buildBatchRequest(batch, allLines);
-		expect(result.state).toContain("L0011| Line 11\n...\nL0041| Line 41");
+		expect(result.state).toContain(
+			"L0011| Line 11\n...| [omitted lines]\nL0041| Line 41",
+		);
 	});
 
 	it("batchRegions splits 2-element region with accurate non-zero tokenCount", () => {
@@ -117,7 +135,8 @@ describe("batch", () => {
 			type: "noul" as const,
 			instructions: "Check slop",
 		};
-		const batches = batchRegions([[0, 1]], allLines, "test_rule", qDef, 40);
+		const lineTokens = estimateLineTokens(allLines);
+		const batches = batchRegions([[0, 1]], lineTokens, "test_rule", qDef, 40);
 		expect(batches.length).toBe(2);
 		expect(batches[0].tokenCount).toBeGreaterThan(0);
 		expect(batches[1].tokenCount).toBeGreaterThan(0);
@@ -129,7 +148,8 @@ describe("batch", () => {
 			type: "noul" as const,
 			instructions: "Check slop",
 		};
-		const batches = batchRegions([[0]], allLines, "test_rule", qDef, 1);
+		const lineTokens = estimateLineTokens(allLines);
+		const batches = batchRegions([[0]], lineTokens, "test_rule", qDef, 1);
 		expect(batches.length).toBe(1);
 		expect(batches[0].regions).toEqual([[0]]);
 		expect(batches[0].tokenCount).toBeGreaterThan(0);
@@ -161,11 +181,12 @@ describe("batch", () => {
 			instructions: "Check slop",
 		};
 		const regions = [[0], [50], [100]];
-		const token1 = estimateRegionTokens([0], allLines, 20);
+		const lineTokens = estimateLineTokens(allLines);
+		const token1 = estimateRegionTokens([0], lineTokens, 20);
 		const maxTokens = Math.floor(token1 * 1.5);
 		const batches = batchRegions(
 			regions,
-			allLines,
+			lineTokens,
 			"test_rule",
 			qDef,
 			maxTokens,
@@ -183,9 +204,10 @@ describe("batch", () => {
 		const targetIndices1 = Array.from({ length: 200 }, (_, i) => i);
 		const targetIndices2 = Array.from({ length: 100 }, (_, i) => i + 250);
 		const regions = [targetIndices1, targetIndices2];
+		const lineTokens = estimateLineTokens(allLines);
 		const batches = batchRegions(
 			regions,
-			allLines,
+			lineTokens,
 			"test_rule",
 			qDef,
 			1_000_000,
@@ -207,11 +229,12 @@ describe("batch", () => {
 			type: "noul" as const,
 			instructions: "Check slop",
 		};
-		const token3Lines = estimateRegionTokens([0, 1, 2], allLines, 20);
+		const lineTokens = estimateLineTokens(allLines);
+		const token3Lines = estimateRegionTokens([0, 1, 2], lineTokens, 20);
 		const maxTokens = Math.floor(token3Lines * 0.7);
 		const batches = batchRegions(
 			[[0, 1, 2, 3, 4]],
-			allLines,
+			lineTokens,
 			"test_rule",
 			qDef,
 			maxTokens,

@@ -162,6 +162,31 @@ Third line`;
 		`);
 	});
 
+	it("extractLineFlags ignores malformed or non-line question IDs", () => {
+		const results: Array<{ qKey: string; answers: Record<string, Answers> }> = [
+			{
+				qKey: "rule_a",
+				answers: {
+					L0001: { type: "noul", noul: 0.95 },
+					doc_summary: { type: "noul", noul: 0.95 },
+					L0000: { type: "noul", noul: 0.95 },
+					invalid: { type: "noul", noul: 0.95 },
+				},
+			},
+		];
+		const flags = extractLineFlags(results, 0.8);
+		expect(Array.from(flags.entries())).toMatchInlineSnapshot(`
+			[
+			  [
+			    0,
+			    [
+			      "rule_a",
+			    ],
+			  ],
+			]
+		`);
+	});
+
 	it("extractDocumentScores extracts score answers", () => {
 		const answers = {
 			clarity: {

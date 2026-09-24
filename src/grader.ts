@@ -3,7 +3,12 @@ import { readFile } from "node:fs/promises";
 import { basename, resolve } from "node:path";
 import type { Answers } from "@openrouter/sdk/models/decisionsresponse";
 import type { DecisionsScoreAnswer } from "@openrouter/sdk/models/decisionsscoreanswer";
-import { batchRegions, buildBatchRequest, lineMarker } from "./batch.ts";
+import {
+	batchRegions,
+	buildBatchRequest,
+	estimateLineTokens,
+	lineMarker,
+} from "./batch.ts";
 import { hashLine, type LineCacheManager } from "./cache.ts";
 import { parseMarkdownRules } from "./markdown/rules.ts";
 import type { Provider } from "./provider.ts";
@@ -64,7 +69,9 @@ export function extractLineFlags(
 	for (const { qKey, answers } of results) {
 		for (const [id, answer] of Object.entries(answers)) {
 			if (answer.type !== "noul" || answer.noul <= threshold) continue;
+			if (!/^L\d+$/.test(id)) continue;
 			const lineIndex = parseInt(id.slice(1), 10) - 1;
+			if (lineIndex < 0) continue;
 			const existing = flags.get(lineIndex) ?? [];
 			existing.push(qKey);
 			flags.set(lineIndex, existing);
@@ -242,10 +249,11 @@ async function evaluateJobs(
 	allLines: string[],
 	provider: Provider,
 ): Promise<void> {
+	const lineTokens = estimateLineTokens(allLines);
 	await Promise.all(
 		dirtyJobs.map(async (job) => {
 			const regions = buildRegions(job.uncachedLines);
-			const batches = batchRegions(regions, allLines, job.ruleId, job.qDef);
+			const batches = batchRegions(regions, lineTokens, job.ruleId, job.qDef);
 			await Promise.all(
 				batches.map(async (batch) => {
 					const { state, batchQuestions } = buildBatchRequest(batch, allLines);

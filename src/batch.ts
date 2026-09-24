@@ -10,19 +10,23 @@ export function lineMarker(lineIndex: LineIndex): string {
 	return `L${String(lineIndex + 1).padStart(4, "0")}`;
 }
 
+export function estimateLineTokens(allLines: string[]): number[] {
+	return allLines.map((line) => estimateTokenCount(line) + 8);
+}
+
 export function estimateRegionTokens(
 	region: LineRegion,
-	allLines: string[],
+	lineTokens: number[],
 	questionTokens: number,
 ): number {
 	const start = Math.max(0, region[0] - CONTEXT_LINES);
 	const end = Math.min(
-		allLines.length - 1,
+		lineTokens.length - 1,
 		region[region.length - 1] + CONTEXT_LINES,
 	);
 	let tokens = 0;
 	for (let i = start; i <= end; i++) {
-		tokens += estimateTokenCount(allLines[i]) + 8;
+		tokens += lineTokens[i];
 	}
 	tokens += region.length * (questionTokens + 8);
 	return tokens;
@@ -37,7 +41,7 @@ export type QuestionBatch = {
 
 export function batchRegions(
 	regions: LineRegion[],
-	allLines: string[],
+	lineTokens: number[],
 	ruleId: string,
 	question: NoulQuestion,
 	maxTokens = TARGET_BATCH_TOKENS,
@@ -56,7 +60,11 @@ export function batchRegions(
 	while (queue.length > 0) {
 		const region = queue.shift();
 		assert(region !== undefined, "region must exist in non-empty queue");
-		const regionTokens = estimateRegionTokens(region, allLines, questionTokens);
+		const regionTokens = estimateRegionTokens(
+			region,
+			lineTokens,
+			questionTokens,
+		);
 
 		if (
 			currentBatch.length > 0 &&
@@ -88,11 +96,11 @@ export function batchRegions(
 		} else {
 			let splitIndex = Math.min(region.length - 2, MAX_BATCH_SIZE - 1);
 			let [left, right] = splitRegion(region, splitIndex);
-			let leftTokens = estimateRegionTokens(left, allLines, questionTokens);
+			let leftTokens = estimateRegionTokens(left, lineTokens, questionTokens);
 			while (splitIndex > 0 && leftTokens > maxTokens) {
 				splitIndex--;
 				[left, right] = splitRegion(region, splitIndex);
-				leftTokens = estimateRegionTokens(left, allLines, questionTokens);
+				leftTokens = estimateRegionTokens(left, lineTokens, questionTokens);
 			}
 
 			batches.push({
@@ -128,7 +136,7 @@ export function buildBatchRequest(
 
 	for (let r = 0; r < batch.regions.length; r++) {
 		if (r > 0) {
-			stateLines.push("...");
+			stateLines.push("...| [omitted lines]");
 		}
 		const region = batch.regions[r];
 		const start = Math.max(0, region[0] - CONTEXT_LINES);
