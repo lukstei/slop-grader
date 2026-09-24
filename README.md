@@ -61,6 +61,7 @@ Pass the output to your AI agent:
 - **[Incremental line caching](#how-does-incremental-caching-work):** Re-evaluates only edited lines; unchanged text resolves from cache with zero API calls. Toggle with `--no-cache`.
 - **System One efficiency:** Typed probabilities via [Jev](https://typesafe.ai) without text generation. Thousands of checks for cents.
 - **Dynamic batching:** Groups lines to token limits to minimize API calls. See [evaluation details](#faq).
+- **[Context window padding](#how-does-context-window-padding-work):** Evaluates line rules with $\pm 10$ lines of surrounding context. Boundary lines and sparse edits keep full visibility without paying for extra questions.
 - **[Line and document scope](#rulesets):** Flags line patterns and rates whole documents on qualitative rubrics.
 - **Plain Markdown rulesets:** Write rules in [Markdown](#custom-rulesets); validate offline with [`--check`](#flags).
 - **[Built-in rulesets](#built-in-rulesets):** Ready-to-use rules for AI writing patterns, document scores, tech docs, and grammar.
@@ -77,6 +78,21 @@ Evaluation separates line-level checks (spotting specific patterns or phrases) f
 Documents have hundreds of lines, but the number of rules is fixed. Sending one API request per line would mean hundreds of calls. Instead, `slop-grader` dynamically groups lines into batches sized to fit the model's context budget (up to 255 lines per batch) and evaluates each rule across its batch in a single call. Batches include up to 10 lines of surrounding document context padding so boundary lines and sparse edits retain neighboring visibility for cross-line checks. Every batch response is verified for complete answer-to-question parity; any dropped questions halt execution immediately without caching incomplete results.
 
 Document rules run in a single request across the entire text.
+
+</details>
+
+<details>
+<summary><a id="how-does-context-window-padding-work"></a><strong>How does context window padding work?</strong></summary>
+
+Line rules often depend on nearby text: pronoun references, synonym repetition across sentences, or transitions between paragraphs. Evaluating a line in isolation makes these checks impossible.
+
+`slop-grader` pads each evaluated line with up to 10 lines of surrounding text ($\pm 10$ lines):
+
+1. **Region clustering:** Lines slated for evaluation are grouped into continuous regions. Targets within 21 lines of each other merge into a single region so the model sees uninterrupted text without repeated lines.
+2. **Structured omission:** When distant lines or sparse edits share a batch, gaps between regions are marked with `...| [omitted lines]`, preserving uniform line structure for the model.
+3. **Zero extra question cost:** Padding lines exist strictly as non-evaluated context in the prompt state. Questions are generated only for active evaluation targets, so context lines add no question fees and don't count toward rule quotas.
+
+This ensures single-line edits during incremental cache runs retain their full document surroundings rather than floating in isolation.
 
 </details>
 
