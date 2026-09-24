@@ -275,13 +275,10 @@ describe("cache module", () => {
 				[hashLine("Line one"), 0.95],
 			]);
 
-			const lines = [
-				{ lineNum: 1, text: "Line one" },
-				{ lineNum: 2, text: "Line two" },
-			];
+			const lines = [0, 1];
 			const lineHashes = new Map<string, number[]>([
-				[hashLine("Line one"), [1]],
-				[hashLine("Line two"), [2]],
+				[hashLine("Line one"), [0]],
+				[hashLine("Line two"), [1]],
 			]);
 
 			const result = await manager.prefilterRule(
@@ -290,8 +287,8 @@ describe("cache module", () => {
 				lines,
 				lineHashes,
 			);
-			expect(result.cachedScores.get(1)).toBe(0.95);
-			expect(result.uncachedLines).toEqual([{ lineNum: 2, text: "Line two" }]);
+			expect(result.cachedScores.get(0)).toBe(0.95);
+			expect(result.uncachedLines).toEqual([1]);
 		});
 
 		it("recovers gracefully from corrupted gzip files", async () => {

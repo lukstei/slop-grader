@@ -9,7 +9,7 @@ import {
 	indexToRuleKey,
 	isScoreViolation,
 } from "./report.ts";
-import type { FlagMap, Line } from "./types.ts";
+import type { FlagMap } from "./types.ts";
 
 describe("report", () => {
 	it("indexToRuleKey generates bijective base-26 letter keys", () => {
@@ -88,14 +88,14 @@ describe("report", () => {
 	});
 
 	it("formatLineReport formats flagged lines with letter keys", () => {
-		const lines: Line[] = [
-			{ lineNum: 1, text: "Empowering our users" },
-			{ lineNum: 2, text: "Clean line here" },
-			{ lineNum: 3, text: "Another bad line" },
+		const lines = [
+			"Empowering our users",
+			"Clean line here",
+			"Another bad line",
 		];
 		const flags: FlagMap = new Map([
-			[1, ["banned_word", "puffery"]],
-			[3, ["banned_word"]],
+			[0, ["banned_word", "puffery"]],
+			[2, ["banned_word"]],
 		]);
 		const questions = {
 			banned_word: { type: "noul" as const, instructions: "Check banned" },
@@ -114,10 +114,7 @@ describe("report", () => {
 	});
 
 	it("formatLineReport indicates when no line rule violations are found", () => {
-		const lines: Line[] = [
-			{ lineNum: 1, text: "Clean line one" },
-			{ lineNum: 2, text: "Clean line two" },
-		];
+		const lines = ["Clean line one", "Clean line two"];
 		const flags: FlagMap = new Map();
 		const questions = {
 			banned_word: { type: "noul" as const, instructions: "Check banned" },
@@ -135,10 +132,7 @@ describe("report", () => {
 	});
 
 	it("formatLineReport handles more than 26 rules using AA-style keys", () => {
-		const lines: Line[] = [
-			{ lineNum: 1, text: "Empowering our users" },
-			{ lineNum: 2, text: "Some typo or issue" },
-		];
+		const lines = ["Empowering our users", "Some typo or issue"];
 		const ruleNames = [
 			"banned_word",
 			"empty_adverb",
@@ -182,8 +176,8 @@ describe("report", () => {
 			]),
 		);
 		const flags: FlagMap = new Map([
-			[1, ["banned_word", "stale_placeholder", "typo_or_misspelling"]],
-			[2, ["noun_pile_up"]],
+			[0, ["banned_word", "stale_placeholder", "typo_or_misspelling"]],
+			[1, ["noun_pile_up"]],
 		]);
 		const report = formatLineReport(lines, flags, questions);
 		expect(report).toMatchInlineSnapshot(`
@@ -268,11 +262,8 @@ describe("report", () => {
 	});
 
 	it("formatJson produces structured JSON output with document violations", () => {
-		const lines: Line[] = [
-			{ lineNum: 1, text: "Empowering our users" },
-			{ lineNum: 2, text: "Clean line" },
-		];
-		const flags: FlagMap = new Map([[1, ["banned_word"]]]);
+		const lines = ["Empowering our users", "Clean line"];
+		const flags: FlagMap = new Map([[0, ["banned_word"]]]);
 		const scores = {
 			engagement: {
 				type: "score" as const,
@@ -332,7 +323,7 @@ describe("report", () => {
 	});
 
 	it("formatJson produces empty violations when document scores are passing and clean", () => {
-		const lines: Line[] = [{ lineNum: 1, text: "Clean line" }];
+		const lines = ["Clean line"];
 		const flags: FlagMap = new Map();
 		const scores = {
 			engagement: {
@@ -447,7 +438,7 @@ describe("report", () => {
 	});
 
 	it("formatJson includes stats when provided", () => {
-		const lines: Line[] = [{ lineNum: 1, text: "Sample text" }];
+		const lines = ["Sample text"];
 		const flags: FlagMap = new Map();
 		const scores = {};
 		const docQuestions = {};

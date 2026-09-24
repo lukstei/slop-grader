@@ -25,11 +25,6 @@
 - **Objective:** Allow rules to specify optional improvement instructions (e.g. `improvement` or `fix` guidance) and include them in human-readable and JSON reports to guide remediation.
 - **Agent Triage:** Strip non-provider fields before dispatching question schemas to provider APIs. Expose the instructions in `--json` output and determine a concise presentation in the human-readable report.
 
-### [x] 4. Support Markdown-Based Rules
-- **Current State:** Rules are defined in Markdown files with `# Line Rules` and `# Document Rules` sections, with automatic type detection (`noul` vs `score`) and rich formatting. Converted all built-in rulesets to Markdown.
-- **Objective:** Support authoring and loading rules from Markdown files (e.g. `.md` files with structured sections or frontmatter) alongside JSON rule files.
-- **Agent Triage:** Define a clean Markdown schema (e.g. headings for rule IDs, lists for criteria/scopes) or frontmatter blocks. Update `resolveRulePath` and `loadRules` to branch on `.md` vs `.json` file extensions.
-
 ### [ ] 5. Provide a GitHub Action
 - **Current State:** `slop-grader` runs purely as a local CLI. Integrating it into CI requires manual shell setup and custom workflow scripting.
 - **Objective:** Provide an official GitHub Action (`action.yml` / reusable action) to grade files or diffs on pull requests and commits, with automated review comments or job summaries.
@@ -70,11 +65,6 @@
 - **Objective:** Batch multiple rules alongside lines in the same API request up to the token budget, reducing API round-trips and avoiding duplicate state token transmission.
 - **Agent Triage:** Pack `(line, rule)` question pairs into single requests. Track combined state and question tokens dynamically with `tokenx`, and ensure question IDs (e.g. `L0001_ruleId`) map cleanly back to line numbers and rule keys.
 
-### [x] 13. Incremental Line-Level Caching
-- **Current State:** Line evaluations are cached deterministically by content hash in the OS-recommended cache directory (`<cacheDir>/v1/<provider>/<safeModel>/<ruleId>.json.gz`) with FIFO / insertion-order eviction and atomic gzip persistence. Unchanged lines bypass API calls.
-- **Objective:** Cache line evaluation results by content and rule hash, skipping re-evaluation for unchanged lines during iterative editing loops.
-- **Agent Triage:** Key cache entries on `hash(line_text, rule_definition)`. Store locally in `.slop-grader/cache` or user cache dir, with a `--no-cache` flag to bypass.
-
 ### [ ] 14. Syntactic Pre-filtering for Lexical Rules
 - **Current State:** All line rules are evaluated through semantic API calls for every line, even when rules have strict syntactic prerequisites (e.g. `colon_reveal` requiring `:`, `em_dash` requiring `—`, or fixed keyword checks).
 - **Objective:** Allow rules to declare fast syntactic pre-filters (e.g. substring or regex guards) in Markdown/JSON rulesets that skip API evaluation when prerequisites are unmet.
@@ -105,10 +95,10 @@
 - **Objective:** Limit concurrent API requests across line batches and rules to a configurable ceiling.
 - **Agent Triage:** Gate `provider.createDecision` calls through a queue or semaphore with a safe default limit (such as 5) and expose a `--concurrency` CLI flag.
 
-### [ ] 20. Context Window Padding for Line Batches
-- **Current State:** `buildBatchRequest` in `src/grader.ts` populates `state` strictly with the active lines assigned to that batch. Boundary lines (first and last lines of each batch) lack preceding or succeeding lines, starving rules like `synonym_cycling` or ambiguous pronoun checks of surrounding context.
-- **Objective:** Include `CONTEXT_LINES` (e.g. ±5 lines) of surrounding document lines in the request `state` as non-evaluated context, generating questions only for the lines targeted by that batch.
-- **Agent Triage:** Pass full document lines to batch building so context padding slices cleanly. Ensure question generation remains restricted strictly to target evaluation lines. Account for context token overhead in `batchLines` budget calculations.
+### [x] 20. Context Window Padding for Line Batches
+- **Current State:** Implemented via region-based context windowing (`buildRegions`, `splitRegion`, and `batchRegions`). Target lines are grouped into continuous regions with $\pm 10$ lines of context padding, merged when intervals overlap ($gap \le 21$). Request `state` receives full context padding while `batchQuestions` are strictly scoped to evaluation targets.
+- **Objective:** Include `CONTEXT_LINES` (±10 lines) of surrounding document lines in the request `state` as non-evaluated context, generating questions only for the lines targeted by that batch.
+- **Agent Triage:** Pass full document lines to batch building so context padding slices cleanly. Ensure question generation remains restricted strictly to target evaluation lines. Account for context token overhead in `batchRegions` budget calculations.
 
 ### [ ] 21. Context-Coupled Cache Invalidation
 - **Current State:** `hashLine` in `src/cache.ts` and `prefilterJobs` in `src/grader.ts` cache scores strictly per individual line hash. If a line changes, only that exact line is treated as uncached, leaving neighboring cached lines with stale scores even when their evaluation depends on the modified context.

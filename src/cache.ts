@@ -4,7 +4,7 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, resolve } from "node:path";
 import { gunzipSync, gzipSync } from "node:zlib";
-import type { Line, NoulQuestion } from "./types.ts";
+import type { LineIndex, NoulQuestion } from "./types.ts";
 
 export const CACHE_VERSION = "v1";
 export const DEFAULT_MAX_ENTRIES = 25_000;
@@ -111,12 +111,12 @@ export class RuleCache {
 		return this.#dirty;
 	}
 
-	getMatches(lineHashes: Map<string, number[]>): Map<number, number> {
-		const matches = new Map<number, number>();
+	getMatches(lineHashes: Map<string, LineIndex[]>): Map<LineIndex, number> {
+		const matches = new Map<LineIndex, number>();
 		for (const [hash, score] of this.#entries) {
-			const lineNums = lineHashes.get(hash);
-			if (lineNums !== undefined) {
-				for (const num of lineNums) {
+			const lineIndices = lineHashes.get(hash);
+			if (lineIndices !== undefined) {
+				for (const num of lineIndices) {
 					matches.set(num, score);
 				}
 			}
@@ -219,12 +219,15 @@ export class LineCacheManager {
 	async prefilterRule(
 		ruleId: string,
 		qDef: NoulQuestion,
-		lines: Line[],
-		lineHashes: Map<string, number[]>,
-	): Promise<{ cachedScores: Map<number, number>; uncachedLines: Line[] }> {
+		lines: LineIndex[],
+		lineHashes: Map<string, LineIndex[]>,
+	): Promise<{
+		cachedScores: Map<LineIndex, number>;
+		uncachedLines: LineIndex[];
+	}> {
 		const cache = await this.loadRuleCache(ruleId, qDef);
 		const cachedScores = cache.getMatches(lineHashes);
-		const uncachedLines = lines.filter((l) => !cachedScores.has(l.lineNum));
+		const uncachedLines = lines.filter((l) => !cachedScores.has(l));
 		return { cachedScores, uncachedLines };
 	}
 
