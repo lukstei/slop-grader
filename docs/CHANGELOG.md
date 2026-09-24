@@ -1,5 +1,13 @@
 # Changelog
 
+## [v0.2.7](https://github.com/lukstei/slop-grader/compare/v0.2.6...v0.2.7)
+
+### Features
+- Add context window padding for line batches.
+
+### Bug Fixes
+- Handle oversized regions and simplify checks.
+
 ## [v0.2.6](https://github.com/lukstei/slop-grader/compare/v0.2.5...v0.2.6)
 
 ### Bug Fixes
