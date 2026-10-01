@@ -396,7 +396,7 @@ Custom JSON rulesets (`-r ./my-rules.json`) are also supported.
 ## CLI Reference
 
 ```sh
-npx @lukstei/slop-grader@latest [-c|--check] [-l|--list-rulesets] -r <ruleset> [-r <ruleset> ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]
+npx @lukstei/slop-grader@latest [-c|--check] [-l|--list-rulesets] -r <ruleset> [-r <ruleset> ...] [--provider <jev|openrouter>] [--model <model>] [--concurrency <num>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]
 ```
 
 ### Flags
@@ -408,6 +408,7 @@ npx @lukstei/slop-grader@latest [-c|--check] [-l|--list-rulesets] -r <ruleset> [
 | `--rules <name\|path>` | `-r` | Ruleset to apply. Repeatable. Accepts built-in names, Markdown (`.md`) files, or JSON file paths. |
 | `--provider <jev\|openrouter>` | `-p` | Override the AI provider. |
 | `--model <model>` | `-m` | Override the default model (`jev-1.13.0` for `jev`, `typesafe/jev-1.13` for `openrouter`). |
+| `--concurrency <num>` | | Maximum concurrent API requests (defaults to 5). |
 | `--json` | `-j` | Emit structured JSON instead of the human-readable report. |
 | `--stats` | `-s` | Print execution statistics (rules applied, lines evaluated, questions asked, API calls, questions evaluated via API, cache hits). |
 | `--debug` | `-d` | Log all API calls (timing, request, response) as JSON to stderr. |
@@ -520,7 +521,7 @@ Planned features we'd like to bring to slop-grader. Have an idea? [Open an issue
 - [ ] Dry-run mode to inspect payloads without API calls (`--dry-run`)
 - [ ] Custom provider base URLs for proxies and self-hosted models (`--base-url`)
 - [ ] Custom confidence thresholds per rule
-- [ ] Configurable request concurrency (`--concurrency`)
+- [x] Configurable request concurrency (`--concurrency`)
 - [ ] Verbose operational logs (`-v` / `--verbose`)
 
 ## License

@@ -182,6 +182,7 @@ describe("main CLI", () => {
 			  "cache": true,
 			  "cacheDir": undefined,
 			  "check": false,
+			  "concurrency": 5,
 			  "debug": false,
 			  "file": "README.md",
 			  "help": false,
@@ -214,6 +215,7 @@ describe("main CLI", () => {
 			  "cache": true,
 			  "cacheDir": undefined,
 			  "check": false,
+			  "concurrency": 5,
 			  "debug": false,
 			  "file": "README.md",
 			  "help": false,
@@ -238,6 +240,7 @@ describe("main CLI", () => {
 			  "cache": true,
 			  "cacheDir": undefined,
 			  "check": true,
+			  "concurrency": 5,
 			  "debug": false,
 			  "file": undefined,
 			  "help": false,
@@ -262,6 +265,7 @@ describe("main CLI", () => {
 			  "cache": true,
 			  "cacheDir": undefined,
 			  "check": true,
+			  "concurrency": 5,
 			  "debug": false,
 			  "file": "rules/no-ai-slop.md",
 			  "help": false,
@@ -329,6 +333,40 @@ describe("main CLI", () => {
 		expect(parsed.cacheDir).toBe("/custom/cache");
 	});
 
+	it("parseCliArgs parses --concurrency flag", () => {
+		const parsed = parseCliArgs([
+			"-r",
+			"no-ai-slop",
+			"--concurrency",
+			"12",
+			"README.md",
+		]);
+		expect(parsed.concurrency).toBe(12);
+	});
+
+	it("parseCliArgs throws on invalid concurrency", () => {
+		expect(() =>
+			parseCliArgs(["-r", "no-ai-slop", "--concurrency", "0", "README.md"]),
+		).toThrowErrorMatchingInlineSnapshot(
+			`[Error: Invalid concurrency "0". Must be a positive integer.]`,
+		);
+		expect(() =>
+			parseCliArgs(["-r", "no-ai-slop", "--concurrency=-2", "README.md"]),
+		).toThrowErrorMatchingInlineSnapshot(
+			`[Error: Invalid concurrency "-2". Must be a positive integer.]`,
+		);
+		expect(() =>
+			parseCliArgs(["-r", "no-ai-slop", "--concurrency", "foo", "README.md"]),
+		).toThrowErrorMatchingInlineSnapshot(
+			`[Error: Invalid concurrency "foo". Must be a positive integer.]`,
+		);
+		expect(() =>
+			parseCliArgs(["-r", "no-ai-slop", "--concurrency", "1.5", "README.md"]),
+		).toThrowErrorMatchingInlineSnapshot(
+			`[Error: Invalid concurrency "1.5". Must be a positive integer.]`,
+		);
+	});
+
 	it("parseCliArgs parses --help and -h flags", () => {
 		expect(parseCliArgs(["--help"]).help).toBe(true);
 		expect(parseCliArgs(["-h"]).help).toBe(true);
@@ -347,20 +385,20 @@ describe("main CLI", () => {
 
 	it("parseCliArgs throws usage on missing arguments", () => {
 		expect(() => parseCliArgs([])).toThrowErrorMatchingInlineSnapshot(
-			`[Error: usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]]`,
+			`[Error: usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--concurrency <num>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]]`,
 		);
 		expect(() =>
 			parseCliArgs(["README.md"]),
 		).toThrowErrorMatchingInlineSnapshot(
-			`[Error: usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]]`,
+			`[Error: usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--concurrency <num>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]]`,
 		);
 		expect(() =>
 			parseCliArgs(["-r", "no-ai-slop"]),
 		).toThrowErrorMatchingInlineSnapshot(
-			`[Error: usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]]`,
+			`[Error: usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--concurrency <num>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]]`,
 		);
 		expect(() => parseCliArgs(["--check"])).toThrowErrorMatchingInlineSnapshot(
-			`[Error: usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]]`,
+			`[Error: usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--concurrency <num>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]]`,
 		);
 	});
 

@@ -728,4 +728,36 @@ Third line`;
 			}
 		`);
 	});
+
+	it("gradeLines respects concurrency when evaluating multiple rules", async () => {
+		let active = 0;
+		let maxActive = 0;
+
+		const mockProvider: Provider = {
+			name: "jev",
+			model: "jev-1.13.0",
+			async createDecision(req) {
+				active++;
+				maxActive = Math.max(maxActive, active);
+				await new Promise((resolve) => setTimeout(resolve, 15));
+				active--;
+				const answers: Record<string, Answers> = {};
+				for (const id of Object.keys(req.questions)) {
+					answers[id] = { type: "noul", noul: 0.1 };
+				}
+				return { answers };
+			},
+		};
+
+		const lines = ["Line one", "Line two"];
+		const questions = {
+			rule_1: { type: "noul" as const, instructions: "Check 1" },
+			rule_2: { type: "noul" as const, instructions: "Check 2" },
+			rule_3: { type: "noul" as const, instructions: "Check 3" },
+			rule_4: { type: "noul" as const, instructions: "Check 4" },
+		};
+
+		await gradeLines(lines, questions, mockProvider, undefined, 2);
+		expect(maxActive).toBe(2);
+	});
 });

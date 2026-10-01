@@ -11,7 +11,11 @@ import {
 } from "./batch.ts";
 import { hashLine, type LineCacheManager } from "./cache.ts";
 import { parseMarkdownRules } from "./markdown/rules.ts";
-import type { Provider } from "./provider.ts";
+import {
+	DEFAULT_CONCURRENCY,
+	type Provider,
+	withConcurrency,
+} from "./provider.ts";
 import { buildRegions } from "./region.ts";
 import type {
 	FlagMap,
@@ -302,6 +306,7 @@ export async function gradeLines(
 	questions: Record<string, NoulQuestion>,
 	provider: Provider,
 	cacheManager?: LineCacheManager,
+	concurrency = DEFAULT_CONCURRENCY,
 ): Promise<{ flags: FlagMap; cacheHits: number }> {
 	const targetIndices: LineIndex[] = [];
 	for (let i = 0; i < allLines.length; i++) {
@@ -323,7 +328,11 @@ export async function gradeLines(
 
 	const dirtyJobs = jobs.filter((j) => j.uncachedLines.length > 0);
 	if (dirtyJobs.length > 0) {
-		await evaluateJobs(dirtyJobs, allLines, provider);
+		const activeProvider =
+			provider.concurrency !== undefined
+				? provider
+				: withConcurrency(provider, concurrency);
+		await evaluateJobs(dirtyJobs, allLines, activeProvider);
 		if (cacheManager) {
 			await writebackCaches(dirtyJobs, allLines, cacheManager);
 		}

@@ -90,8 +90,8 @@
 - **Objective:** Add a Renovate configuration (`renovate.json` or `.github/renovate.json5`) to automate npm and GitHub Actions dependency updates.
 - **Agent Triage:** Group non-breaking devDependencies and CI action bumps to limit PR volume. Ensure Renovate PRs trigger `npm run verify` in CI.
 
-### [ ] 19. Limit API Request Concurrency
-- **Current State:** `gradeLines` in `src/grader.ts` fires all rules and line batches concurrently with unconstrained `Promise.all` calls. Evaluating large documents or multiple rulesets can exhaust connections or trigger provider HTTP 429 rate limits.
+### [x] 19. Limit API Request Concurrency
+- **Current State:** Implemented via `withConcurrency` provider wrapping and `--concurrency <num>` flag (defaulting to 5). Line evaluation batches and document rules share a bounded asynchronous queue, preventing network socket exhaustion and provider HTTP 429 rate limits.
 - **Objective:** Limit concurrent API requests across line batches and rules to a configurable ceiling.
 - **Agent Triage:** Gate `provider.createDecision` calls through a queue or semaphore with a safe default limit (such as 5) and expose a `--concurrency` CLI flag.
 

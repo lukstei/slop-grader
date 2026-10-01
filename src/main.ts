@@ -14,8 +14,10 @@ import {
 } from "./grader.ts";
 import {
 	createProvider,
+	DEFAULT_CONCURRENCY,
 	type Provider,
 	type ProviderName,
+	withConcurrency,
 } from "./provider.ts";
 import {
 	formatDocumentScores,
@@ -63,6 +65,7 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 	file?: string;
 	provider?: ProviderName;
 	model?: string;
+	concurrency: number;
 	json: boolean;
 	stats: boolean;
 	debug: boolean;
@@ -79,6 +82,7 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 			rules: { type: "string", multiple: true, short: "r" },
 			provider: { type: "string", short: "p" },
 			model: { type: "string", short: "m" },
+			concurrency: { type: "string" },
 			json: { type: "boolean", short: "j", default: false },
 			stats: { type: "boolean", short: "s", default: false },
 			debug: { type: "boolean", short: "d", default: false },
@@ -98,6 +102,10 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 		return {
 			check: false,
 			rulesPaths: [],
+			file: undefined,
+			provider: undefined,
+			model: undefined,
+			concurrency: DEFAULT_CONCURRENCY,
 			json: values.json ?? false,
 			stats: false,
 			debug: false,
@@ -115,7 +123,7 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 
 	if (!rulesPaths.length || (!check && !file)) {
 		throw new Error(
-			"usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]",
+			"usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--concurrency <num>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]",
 		);
 	}
 
@@ -130,6 +138,17 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 		);
 	}
 
+	let concurrency = DEFAULT_CONCURRENCY;
+	if (values.concurrency !== undefined) {
+		const parsed = Number(values.concurrency);
+		if (!Number.isInteger(parsed) || parsed <= 0) {
+			throw new Error(
+				`Invalid concurrency "${values.concurrency}". Must be a positive integer.`,
+			);
+		}
+		concurrency = parsed;
+	}
+
 	const cache = !values["no-cache"];
 
 	return {
@@ -138,6 +157,7 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 		file,
 		provider,
 		model: values.model,
+		concurrency,
 		json: values.json ?? false,
 		stats: values.stats ?? false,
 		debug: values.debug ?? false,
@@ -150,7 +170,7 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 }
 
 const USAGE =
-	"usage: slop-grader [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]";
+	"usage: slop-grader [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--concurrency <num>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]";
 
 export async function main(argv = process.argv.slice(2)) {
 	const {
@@ -159,6 +179,7 @@ export async function main(argv = process.argv.slice(2)) {
 		file,
 		provider: providerName,
 		model,
+		concurrency,
 		json,
 		stats,
 		debug,
@@ -290,9 +311,11 @@ export async function main(argv = process.argv.slice(2)) {
 			})
 		: undefined;
 
+	const boundedProvider = withConcurrency(trackingProvider, concurrency);
+
 	const [lineResult, docResult] = await Promise.all([
-		gradeLines(lines, lineRules, trackingProvider, cacheManager),
-		gradeDocument(fullText, docRules, trackingProvider),
+		gradeLines(lines, lineRules, boundedProvider, cacheManager),
+		gradeDocument(fullText, docRules, boundedProvider),
 	]);
 	const { flags, cacheHits } = lineResult;
 	const { scores, flags: docFlags } = docResult;
