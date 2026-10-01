@@ -58,16 +58,36 @@ try {
 
 // 2. Dispatch GitHub Actions workflow
 console.log(`→ Dispatching GitHub Actions release (${bump})...`);
+const previousRunId = capture(
+	"gh run list --workflow=publish.yml --limit 1 --json databaseId --jq '.[0].databaseId || \"\"'",
+);
+
 try {
 	run(`gh workflow run publish.yml -f bump=${bump}`);
-	await timers.setTimeout(7000);
 } catch {
 	abort("Failed to trigger GitHub Actions workflow.");
 }
 
-console.log("→ Watching release workflow run...");
+console.log("→ Locating release workflow run...");
+let runId = "";
+for (let i = 0; i < 15; i++) {
+	await timers.setTimeout(1000);
+	const latestId = capture(
+		"gh run list --workflow=publish.yml --limit 1 --json databaseId --jq '.[0].databaseId || \"\"'",
+	);
+	if (latestId && latestId !== previousRunId) {
+		runId = latestId;
+		break;
+	}
+}
+
+if (!runId) {
+	abort("Could not find dispatched workflow run.");
+}
+
+console.log(`→ Watching release workflow run (${runId})...`);
 try {
-	run("gh run watch --exit-status");
+	run(`gh run watch ${runId} --exit-status`, { stdio: "inherit" });
 } catch {
 	abort("GitHub Actions release workflow failed or was cancelled.");
 }

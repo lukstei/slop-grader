@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.3.0](https://github.com/lukstei/slop-grader/compare/v0.2.7...v0.3.0)
+
+### Features
+- Add `--concurrency` flag to limit API requests.
+
 ## [v0.2.7](https://github.com/lukstei/slop-grader/compare/v0.2.6...v0.2.7)
 
 ### Features
