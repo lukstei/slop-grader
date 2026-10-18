@@ -59,7 +59,7 @@ try {
 // 2. Dispatch GitHub Actions workflow
 console.log(`→ Dispatching GitHub Actions release (${bump})...`);
 const previousRunId = capture(
-	"gh run list --workflow=publish.yml --limit 1 --json databaseId --jq '.[0].databaseId || \"\"'",
+	"gh run list --workflow=publish.yml --limit 1 --json databaseId --jq '.[0].databaseId // \"\"'",
 );
 
 try {
@@ -73,7 +73,7 @@ let runId = "";
 for (let i = 0; i < 15; i++) {
 	await timers.setTimeout(1000);
 	const latestId = capture(
-		"gh run list --workflow=publish.yml --limit 1 --json databaseId --jq '.[0].databaseId || \"\"'",
+		"gh run list --workflow=publish.yml --limit 1 --json databaseId --jq '.[0].databaseId // \"\"'",
 	);
 	if (latestId && latestId !== previousRunId) {
 		runId = latestId;
