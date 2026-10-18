@@ -396,7 +396,7 @@ Custom JSON rulesets (`-r ./my-rules.json`) are also supported.
 ## CLI Reference
 
 ```sh
-npx @lukstei/slop-grader@latest [-c|--check] [-l|--list-rulesets] -r <ruleset> [-r <ruleset> ...] [--provider <jev|openrouter>] [--model <model>] [--concurrency <num>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]
+npx @lukstei/slop-grader@latest [-c|--check] [-l|--list-rulesets] -r <ruleset> [-r <ruleset> ...] [--provider <jev|openrouter>] [--model <model>] [--base-url <url>] [--concurrency <num>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]
 ```
 
 ### Flags
@@ -408,6 +408,7 @@ npx @lukstei/slop-grader@latest [-c|--check] [-l|--list-rulesets] -r <ruleset> [
 | `--rules <name\|path>` | `-r` | Ruleset to apply. Repeatable. Accepts built-in names, Markdown (`.md`) files, or JSON file paths. |
 | `--provider <jev\|openrouter>` | `-p` | Override the AI provider. |
 | `--model <model>` | `-m` | Override the default model (`jev-1.13.0` for `jev`, `typesafe/jev-1.13` for `openrouter`). |
+| `--base-url <url>` | | Override the provider base URL (supports proxies and mock gateways). |
 | `--concurrency <num>` | | Maximum concurrent API requests (defaults to 5). |
 | `--json` | `-j` | Emit structured JSON instead of the human-readable report. |
 | `--stats` | `-s` | Print execution statistics (rules applied, lines evaluated, questions asked, API calls, questions evaluated via API, cache hits). |
@@ -422,7 +423,9 @@ npx @lukstei/slop-grader@latest [-c|--check] [-l|--list-rulesets] -r <ruleset> [
 | Variable | Description |
 |---|---|
 | `TYPESAFE_API_KEY` | API key for direct Jev access via TypeSafe AI. Automatically selects `jev`. |
+| `TYPESAFE_BASE_URL` | Custom base URL for TypeSafe AI API (defaults to `https://api.typesafe.ai`). |
 | `OPENROUTER_API_KEY` | API key for OpenRouter. Automatically selects `openrouter`. |
+| `OPENROUTER_BASE_URL` | Custom base URL for OpenRouter API (defaults to `https://openrouter.ai`). |
 | `TYPESAFE_PROVIDER` | Explicitly choose `jev` or `openrouter` without passing `--provider`. |
 
 Provider resolution order:

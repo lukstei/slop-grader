@@ -179,6 +179,7 @@ describe("main CLI", () => {
 		const parsed = parseCliArgs(["-r", "no-ai-slop", "README.md"]);
 		expect(stripAbsolutePaths(parsed)).toMatchInlineSnapshot(`
 			{
+			  "baseUrl": undefined,
 			  "cache": true,
 			  "cacheDir": undefined,
 			  "check": false,
@@ -212,6 +213,7 @@ describe("main CLI", () => {
 		]);
 		expect(stripAbsolutePaths(parsed)).toMatchInlineSnapshot(`
 			{
+			  "baseUrl": undefined,
 			  "cache": true,
 			  "cacheDir": undefined,
 			  "check": false,
@@ -237,6 +239,7 @@ describe("main CLI", () => {
 		const parsedLong = parseCliArgs(["--check", "-r", "no-ai-slop"]);
 		expect(stripAbsolutePaths(parsedLong)).toMatchInlineSnapshot(`
 			{
+			  "baseUrl": undefined,
 			  "cache": true,
 			  "cacheDir": undefined,
 			  "check": true,
@@ -262,6 +265,7 @@ describe("main CLI", () => {
 		const parsedPositional = parseCliArgs(["--check", "rules/no-ai-slop.md"]);
 		expect(stripAbsolutePaths(parsedPositional)).toMatchInlineSnapshot(`
 			{
+			  "baseUrl": undefined,
 			  "cache": true,
 			  "cacheDir": undefined,
 			  "check": true,
@@ -300,6 +304,17 @@ describe("main CLI", () => {
 			"README.md",
 		]);
 		expect(parsedShort.model).toBe("custom-model");
+	});
+
+	it("parseCliArgs parses --base-url flag", () => {
+		const parsed = parseCliArgs([
+			"-r",
+			"no-ai-slop",
+			"--base-url",
+			"https://custom-proxy.internal",
+			"README.md",
+		]);
+		expect(parsed.baseUrl).toBe("https://custom-proxy.internal");
 	});
 
 	it("parseCliArgs parses --stats flag", () => {
@@ -385,20 +400,20 @@ describe("main CLI", () => {
 
 	it("parseCliArgs throws usage on missing arguments", () => {
 		expect(() => parseCliArgs([])).toThrowErrorMatchingInlineSnapshot(
-			`[Error: usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--concurrency <num>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]]`,
+			`[Error: usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--base-url <url>] [--concurrency <num>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]]`,
 		);
 		expect(() =>
 			parseCliArgs(["README.md"]),
 		).toThrowErrorMatchingInlineSnapshot(
-			`[Error: usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--concurrency <num>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]]`,
+			`[Error: usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--base-url <url>] [--concurrency <num>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]]`,
 		);
 		expect(() =>
 			parseCliArgs(["-r", "no-ai-slop"]),
 		).toThrowErrorMatchingInlineSnapshot(
-			`[Error: usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--concurrency <num>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]]`,
+			`[Error: usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--base-url <url>] [--concurrency <num>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]]`,
 		);
 		expect(() => parseCliArgs(["--check"])).toThrowErrorMatchingInlineSnapshot(
-			`[Error: usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--concurrency <num>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]]`,
+			`[Error: usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--base-url <url>] [--concurrency <num>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]]`,
 		);
 	});
 

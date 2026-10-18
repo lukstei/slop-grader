@@ -230,4 +230,49 @@ describe("JevProvider", () => {
 			`[Error: Provider (jev) returned invalid response: missing answers object]`,
 		);
 	});
+
+	it("configures custom baseUrl from parameter and normalizes trailing slash", () => {
+		const original = process.env.TYPESAFE_API_KEY;
+		process.env.TYPESAFE_API_KEY = "test-key";
+		try {
+			const provider = new JevProvider(
+				undefined,
+				undefined,
+				"https://proxy.typesafe.internal/",
+			);
+			expect(provider.baseUrl).toMatchInlineSnapshot(
+				`"https://proxy.typesafe.internal"`,
+			);
+		} finally {
+			if (original !== undefined) {
+				process.env.TYPESAFE_API_KEY = original;
+			} else {
+				delete process.env.TYPESAFE_API_KEY;
+			}
+		}
+	});
+
+	it("falls back to TYPESAFE_BASE_URL environment variable", () => {
+		const originalKey = process.env.TYPESAFE_API_KEY;
+		const originalUrl = process.env.TYPESAFE_BASE_URL;
+		process.env.TYPESAFE_API_KEY = "test-key";
+		process.env.TYPESAFE_BASE_URL = "https://env.typesafe.internal/";
+		try {
+			const provider = new JevProvider();
+			expect(provider.baseUrl).toMatchInlineSnapshot(
+				`"https://env.typesafe.internal"`,
+			);
+		} finally {
+			if (originalKey !== undefined) {
+				process.env.TYPESAFE_API_KEY = originalKey;
+			} else {
+				delete process.env.TYPESAFE_API_KEY;
+			}
+			if (originalUrl !== undefined) {
+				process.env.TYPESAFE_BASE_URL = originalUrl;
+			} else {
+				delete process.env.TYPESAFE_BASE_URL;
+			}
+		}
+	});
 });

@@ -16,7 +16,7 @@ export class JevProvider implements Provider {
 	readonly model: string;
 	readonly #client: TypeSafeClient;
 
-	constructor(client?: TypeSafeClient, model?: string) {
+	constructor(client?: TypeSafeClient, model?: string, baseUrl?: string) {
 		this.model = model ?? DEFAULT_MODEL;
 		if (client) {
 			this.#client = client;
@@ -24,7 +24,17 @@ export class JevProvider implements Provider {
 		}
 		const apiKey = process.env.TYPESAFE_API_KEY;
 		assert(apiKey, "Missing TYPESAFE_API_KEY environment variable.");
-		this.#client = new TypeSafeClient({ apiKey });
+		const resolvedBaseUrl = baseUrl ?? process.env.TYPESAFE_BASE_URL;
+		this.#client = new TypeSafeClient({
+			apiKey,
+			...(resolvedBaseUrl
+				? { baseURL: resolvedBaseUrl.replace(/\/+$/, "") }
+				: {}),
+		});
+	}
+
+	get baseUrl(): string {
+		return this.#client.baseURL;
 	}
 
 	async createDecision(

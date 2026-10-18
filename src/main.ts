@@ -65,6 +65,7 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 	file?: string;
 	provider?: ProviderName;
 	model?: string;
+	baseUrl?: string;
 	concurrency: number;
 	json: boolean;
 	stats: boolean;
@@ -82,6 +83,7 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 			rules: { type: "string", multiple: true, short: "r" },
 			provider: { type: "string", short: "p" },
 			model: { type: "string", short: "m" },
+			"base-url": { type: "string" },
 			concurrency: { type: "string" },
 			json: { type: "boolean", short: "j", default: false },
 			stats: { type: "boolean", short: "s", default: false },
@@ -105,6 +107,7 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 			file: undefined,
 			provider: undefined,
 			model: undefined,
+			baseUrl: undefined,
 			concurrency: DEFAULT_CONCURRENCY,
 			json: values.json ?? false,
 			stats: false,
@@ -123,7 +126,7 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 
 	if (!rulesPaths.length || (!check && !file)) {
 		throw new Error(
-			"usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--concurrency <num>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]",
+			"usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--base-url <url>] [--concurrency <num>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]",
 		);
 	}
 
@@ -157,6 +160,7 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 		file,
 		provider,
 		model: values.model,
+		baseUrl: values["base-url"],
 		concurrency,
 		json: values.json ?? false,
 		stats: values.stats ?? false,
@@ -170,7 +174,7 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 }
 
 const USAGE =
-	"usage: slop-grader [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--concurrency <num>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]";
+	"usage: slop-grader [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--base-url <url>] [--concurrency <num>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]";
 
 export async function main(argv = process.argv.slice(2)) {
 	const {
@@ -179,6 +183,7 @@ export async function main(argv = process.argv.slice(2)) {
 		file,
 		provider: providerName,
 		model,
+		baseUrl,
 		concurrency,
 		json,
 		stats,
@@ -242,13 +247,14 @@ export async function main(argv = process.argv.slice(2)) {
 	}
 
 	assert(file, "file is required when not in check mode");
-	const provider = createProvider(providerName, model);
+	const provider = createProvider(providerName, model, baseUrl);
 
 	let apiCalls = 0;
 	let apiQuestions = 0;
 	const trackingProvider: Provider = {
 		name: provider.name,
 		model: provider.model,
+		baseUrl: provider.baseUrl,
 		async createDecision(req) {
 			const callIndex = ++apiCalls;
 			apiQuestions += Object.keys(req.questions).length;

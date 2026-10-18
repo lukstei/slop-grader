@@ -177,4 +177,83 @@ describe("OpenRouterProvider", () => {
 			`[Error: Provider (openrouter) returned invalid response: missing answers object]`,
 		);
 	});
+
+	it("uses OPENROUTER_BASE_URL env var and normalizes trailing slash", async () => {
+		const originalBaseUrl = process.env.OPENROUTER_BASE_URL;
+		process.env.OPENROUTER_BASE_URL = "https://proxy.example.com/openrouter/";
+		let capturedUrl = "";
+
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async (url: string | URL | Request) => {
+				capturedUrl = url.toString();
+				return new Response(JSON.stringify({ answers: {} }), {
+					status: 200,
+					headers: { "Content-Type": "application/json" },
+				});
+			}),
+		);
+
+		try {
+			const provider = new OpenRouterProvider();
+			expect(provider.baseUrl).toMatchInlineSnapshot(
+				`"https://proxy.example.com/openrouter"`,
+			);
+			await provider.createDecision({
+				model: "test-model",
+				state: "text",
+				questions: {},
+			});
+			expect(capturedUrl).toMatchInlineSnapshot(
+				`"https://proxy.example.com/openrouter/api/alpha/decisions"`,
+			);
+		} finally {
+			if (originalBaseUrl !== undefined) {
+				process.env.OPENROUTER_BASE_URL = originalBaseUrl;
+			} else {
+				delete process.env.OPENROUTER_BASE_URL;
+			}
+		}
+	});
+
+	it("constructor baseUrl parameter overrides env var and handles full endpoint path", async () => {
+		const originalBaseUrl = process.env.OPENROUTER_BASE_URL;
+		process.env.OPENROUTER_BASE_URL = "https://env.example.com";
+		let capturedUrl = "";
+
+		vi.stubGlobal(
+			"fetch",
+			vi.fn(async (url: string | URL | Request) => {
+				capturedUrl = url.toString();
+				return new Response(JSON.stringify({ answers: {} }), {
+					status: 200,
+					headers: { "Content-Type": "application/json" },
+				});
+			}),
+		);
+
+		try {
+			const provider = new OpenRouterProvider(
+				undefined,
+				"https://override.example.com/api/alpha/decisions/",
+			);
+			expect(provider.baseUrl).toMatchInlineSnapshot(
+				`"https://override.example.com/api/alpha/decisions"`,
+			);
+			await provider.createDecision({
+				model: "test-model",
+				state: "text",
+				questions: {},
+			});
+			expect(capturedUrl).toMatchInlineSnapshot(
+				`"https://override.example.com/api/alpha/decisions"`,
+			);
+		} finally {
+			if (originalBaseUrl !== undefined) {
+				process.env.OPENROUTER_BASE_URL = originalBaseUrl;
+			} else {
+				delete process.env.OPENROUTER_BASE_URL;
+			}
+		}
+	});
 });

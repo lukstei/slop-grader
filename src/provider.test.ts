@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type Provider, withConcurrency } from "./provider.ts";
+import { createProvider, type Provider, withConcurrency } from "./provider.ts";
 
 describe("withConcurrency", () => {
 	it("limits active concurrent requests to limit and preserves FIFO order", async () => {
@@ -115,5 +115,63 @@ describe("withConcurrency", () => {
 		expect(() => withConcurrency(mockProvider, Number.NaN)).toThrow(
 			'Invalid concurrency "NaN". Must be a positive integer.',
 		);
+	});
+
+	it("preserves baseUrl on wrapped provider", () => {
+		const mockProvider: Provider = {
+			name: "openrouter",
+			model: "test-model",
+			baseUrl: "https://proxy.example.com",
+			async createDecision() {
+				return { answers: {} };
+			},
+		};
+
+		const bounded = withConcurrency(mockProvider, 2);
+		expect(bounded.baseUrl).toMatchInlineSnapshot(
+			`"https://proxy.example.com"`,
+		);
+	});
+});
+
+describe("createProvider", () => {
+	it("passes baseUrl to openrouter provider", () => {
+		const originalKey = process.env.OPENROUTER_API_KEY;
+		process.env.OPENROUTER_API_KEY = "test-key";
+		try {
+			const provider = createProvider(
+				"openrouter",
+				"model-a",
+				"https://openrouter.proxy/api/",
+			);
+			expect(provider.baseUrl).toMatchInlineSnapshot(
+				`"https://openrouter.proxy/api"`,
+			);
+		} finally {
+			if (originalKey !== undefined) {
+				process.env.OPENROUTER_API_KEY = originalKey;
+			} else {
+				delete process.env.OPENROUTER_API_KEY;
+			}
+		}
+	});
+
+	it("passes baseUrl to jev provider", () => {
+		const originalKey = process.env.TYPESAFE_API_KEY;
+		process.env.TYPESAFE_API_KEY = "test-key";
+		try {
+			const provider = createProvider(
+				"jev",
+				"model-b",
+				"https://jev.proxy/api/",
+			);
+			expect(provider.baseUrl).toMatchInlineSnapshot(`"https://jev.proxy/api"`);
+		} finally {
+			if (originalKey !== undefined) {
+				process.env.TYPESAFE_API_KEY = originalKey;
+			} else {
+				delete process.env.TYPESAFE_API_KEY;
+			}
+		}
 	});
 });

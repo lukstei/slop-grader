@@ -9,6 +9,7 @@ export type { Answers, DecisionsRequest };
 export interface Provider {
 	readonly name: ProviderName;
 	readonly model: string;
+	readonly baseUrl?: string;
 	readonly concurrency?: number;
 	createDecision(
 		req: DecisionsRequest,
@@ -34,6 +35,7 @@ export function withConcurrency(
 	return {
 		name: provider.name,
 		model: provider.model,
+		baseUrl: provider.baseUrl,
 		concurrency: limit,
 		async createDecision(req) {
 			if (active >= limit) {
@@ -54,13 +56,17 @@ export function withConcurrency(
 
 export type ProviderName = "openrouter" | "jev";
 
-export function createProvider(name?: ProviderName, model?: string): Provider {
+export function createProvider(
+	name?: ProviderName,
+	model?: string,
+	baseUrl?: string,
+): Provider {
 	const resolved = name ?? resolveFromEnv();
 	switch (resolved) {
 		case "openrouter":
-			return new OpenRouterProvider(model);
+			return new OpenRouterProvider(model, baseUrl);
 		case "jev":
-			return new JevProvider(undefined, model);
+			return new JevProvider(undefined, model, baseUrl);
 	}
 }
 

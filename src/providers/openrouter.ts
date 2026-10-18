@@ -3,25 +3,35 @@ import type { DecisionsRequest } from "@openrouter/sdk/models/decisionsrequest";
 import type { Answers } from "@openrouter/sdk/models/decisionsresponse";
 import type { Provider } from "../provider.ts";
 
-const OPENROUTER_API_URL = "https://openrouter.ai/api/alpha/decisions";
+const DEFAULT_BASE_URL = "https://openrouter.ai";
 const DEFAULT_MODEL = "typesafe/jev-1.13";
 
 export class OpenRouterProvider implements Provider {
 	readonly name = "openrouter" as const;
 	readonly model: string;
+	readonly baseUrl: string;
 	readonly #apiKey: string;
 
-	constructor(model?: string) {
+	constructor(model?: string, baseUrl?: string) {
 		const apiKey = process.env.OPENROUTER_API_KEY;
 		assert(apiKey, "Missing OPENROUTER_API_KEY environment variable.");
 		this.#apiKey = apiKey;
 		this.model = model ?? DEFAULT_MODEL;
+		const rawBaseUrl =
+			baseUrl ?? process.env.OPENROUTER_BASE_URL ?? DEFAULT_BASE_URL;
+		this.baseUrl = rawBaseUrl.replace(/\/+$/, "");
+	}
+
+	get #endpoint(): string {
+		return this.baseUrl.endsWith("/api/alpha/decisions")
+			? this.baseUrl
+			: `${this.baseUrl}/api/alpha/decisions`;
 	}
 
 	async createDecision(
 		req: DecisionsRequest,
 	): Promise<{ answers: Record<string, Answers> }> {
-		const res = await fetch(OPENROUTER_API_URL, {
+		const res = await fetch(this.#endpoint, {
 			method: "POST",
 			headers: {
 				"Content-Type": "application/json",
