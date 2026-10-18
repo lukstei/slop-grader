@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.4.0](https://github.com/lukstei/slop-grader/compare/v0.3.0...v0.4.0)
+
+### Features
+- Add custom base URL support via flag and environment variable.
+
 ## [v0.3.0](https://github.com/lukstei/slop-grader/compare/v0.2.7...v0.3.0)
 
 ### Features
