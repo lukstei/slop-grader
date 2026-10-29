@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.5.0](https://github.com/lukstei/slop-grader/compare/v0.4.0...v0.5.0)
+
+### Features
+- Support reading from standard input with `-`.
+
 ## [v0.4.0](https://github.com/lukstei/slop-grader/compare/v0.3.0...v0.4.0)
 
 ### Features
