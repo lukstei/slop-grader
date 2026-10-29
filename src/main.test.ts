@@ -398,22 +398,47 @@ describe("main CLI", () => {
 		expect(parseCliArgs(["-l", "--json"]).json).toBe(true);
 	});
 
+	it("parseCliArgs parses standard input indicator '-' as file", () => {
+		const parsed = parseCliArgs(["-r", "no-ai-slop", "-"]);
+		expect(stripAbsolutePaths(parsed)).toMatchInlineSnapshot(`
+			{
+			  "baseUrl": undefined,
+			  "cache": true,
+			  "cacheDir": undefined,
+			  "check": false,
+			  "concurrency": 5,
+			  "debug": false,
+			  "file": "-",
+			  "help": false,
+			  "json": false,
+			  "listRulesets": false,
+			  "model": undefined,
+			  "provider": undefined,
+			  "rulesPaths": [
+			    "rules/no-ai-slop.md",
+			  ],
+			  "stats": false,
+			  "version": false,
+			}
+		`);
+	});
+
 	it("parseCliArgs throws usage on missing arguments", () => {
 		expect(() => parseCliArgs([])).toThrowErrorMatchingInlineSnapshot(
-			`[Error: usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--base-url <url>] [--concurrency <num>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]]`,
+			`[Error: usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--base-url <url>] [--concurrency <num>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file|-]]`,
 		);
 		expect(() =>
 			parseCliArgs(["README.md"]),
 		).toThrowErrorMatchingInlineSnapshot(
-			`[Error: usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--base-url <url>] [--concurrency <num>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]]`,
+			`[Error: usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--base-url <url>] [--concurrency <num>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file|-]]`,
 		);
 		expect(() =>
 			parseCliArgs(["-r", "no-ai-slop"]),
 		).toThrowErrorMatchingInlineSnapshot(
-			`[Error: usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--base-url <url>] [--concurrency <num>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]]`,
+			`[Error: usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--base-url <url>] [--concurrency <num>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file|-]]`,
 		);
 		expect(() => parseCliArgs(["--check"])).toThrowErrorMatchingInlineSnapshot(
-			`[Error: usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--base-url <url>] [--concurrency <num>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]]`,
+			`[Error: usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--base-url <url>] [--concurrency <num>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file|-]]`,
 		);
 	});
 

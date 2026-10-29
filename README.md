@@ -396,7 +396,13 @@ Custom JSON rulesets (`-r ./my-rules.json`) are also supported.
 ## CLI Reference
 
 ```sh
-npx @lukstei/slop-grader@latest [-c|--check] [-l|--list-rulesets] -r <ruleset> [-r <ruleset> ...] [--provider <jev|openrouter>] [--model <model>] [--base-url <url>] [--concurrency <num>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]
+npx @lukstei/slop-grader@latest [-c|--check] [-l|--list-rulesets] -r <ruleset> [-r <ruleset> ...] [--provider <jev|openrouter>] [--model <model>] [--base-url <url>] [--concurrency <num>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file|-]
+```
+
+Pass `-` as the file argument to read document content from standard input:
+
+```sh
+cat my-draft.md | npx @lukstei/slop-grader@latest -r no-ai-slop -
 ```
 
 ### Flags
@@ -513,7 +519,7 @@ Planned features we'd like to bring to slop-grader. Have an idea? [Open an issue
 - [ ] Remediation guidance and fix instructions in reports
 - [ ] Expanded rulesets for git commits, PR descriptions, and ADRs
 - [ ] Legal and policy document rulesets (Terms of Service, Privacy Policies)
-- [ ] Standard input support (`cat doc.md | slop-grader -`)
+- [x] Standard input support (`cat doc.md | slop-grader -`)
 - [ ] Token usage and estimated API costs in `--stats`
 - [ ] Standalone binaries via Homebrew and APT (no Node runtime required)
 - [ ] Interactive CLI prompt mode

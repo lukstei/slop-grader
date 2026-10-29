@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { Readable } from "node:stream";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { main } from "./main.ts";
 import type { Answers, DecisionsRequest } from "./provider.ts";
@@ -155,5 +156,151 @@ describe("E2E CLI simulation", () => {
 			  },
 			}
 		`);
+	});
+
+	it("executes standard input workflow when '-' is passed as file argument", async () => {
+		vi.stubGlobal(
+			"fetch",
+			async (_url: string | URL | Request, init?: RequestInit) => {
+				assert(init?.body, "request body required");
+				const body = JSON.parse(init.body as string) as DecisionsRequest;
+
+				const answers: Record<string, Answers> = {};
+				for (const [id, q] of Object.entries(body.questions)) {
+					if (q.type === "noul") {
+						answers[id] = { type: "noul", noul: 0.95 };
+					} else if (q.type === "score") {
+						answers[id] = { type: "score", score: 0 };
+					}
+				}
+
+				return new Response(JSON.stringify({ answers }), {
+					status: 200,
+					headers: { "Content-Type": "application/json" },
+				});
+			},
+		);
+
+		let capturedOutput = "";
+		vi.spyOn(console, "log").mockImplementation((msg: string) => {
+			capturedOutput += (capturedOutput ? "\n" : "") + msg;
+		});
+
+		const stdinStream = Readable.from([
+			"We leverage synergy across services to streamline data pipelines.\n",
+		]);
+
+		await main(
+			[
+				"-r",
+				"test/fixtures/e2e-rules.md",
+				"--provider",
+				"openrouter",
+				"--no-cache",
+				"--json",
+				"-",
+			],
+			stdinStream,
+		);
+
+		const parsed = JSON.parse(capturedOutput);
+		expect(parsed.file).toBe("<stdin>");
+		expect(parsed.violations.lines).toMatchInlineSnapshot(`
+			[
+			  {
+			    "lineNum": 1,
+			    "rules": [
+			      "buzzword_check",
+			    ],
+			    "text": "We leverage synergy across services to streamline data pipelines.",
+			  },
+			]
+		`);
+	});
+
+	it("executes standard input workflow in human-readable mode with '<stdin>' display label", async () => {
+		vi.stubGlobal(
+			"fetch",
+			async (_url: string | URL | Request, init?: RequestInit) => {
+				assert(init?.body, "request body required");
+				const body = JSON.parse(init.body as string) as DecisionsRequest;
+
+				const answers: Record<string, Answers> = {};
+				for (const [id, q] of Object.entries(body.questions)) {
+					if (q.type === "noul") {
+						answers[id] = { type: "noul", noul: 0.95 };
+					} else if (q.type === "score") {
+						answers[id] = { type: "score", score: 2 };
+					}
+				}
+
+				return new Response(JSON.stringify({ answers }), {
+					status: 200,
+					headers: { "Content-Type": "application/json" },
+				});
+			},
+		);
+
+		const loggedLines: string[] = [];
+		vi.spyOn(console, "log").mockImplementation((msg: string) => {
+			loggedLines.push(msg);
+		});
+
+		const stdinStream = Readable.from([
+			"We leverage synergy across services to streamline data pipelines.\n",
+		]);
+
+		await main(
+			[
+				"-r",
+				"test/fixtures/e2e-rules.md",
+				"--provider",
+				"openrouter",
+				"--no-cache",
+				"-",
+			],
+			stdinStream,
+		);
+
+		const sanitized = loggedLines.join("\n").replaceAll(process.cwd(), "<CWD>");
+		expect(sanitized).toMatchInlineSnapshot(`
+			"Use the SKILL \`<CWD>/SKILL.md\` to improve \`<stdin>\`.
+
+			Rules:
+			  <CWD>/test/fixtures/e2e-rules.md
+
+			A=buzzword_check
+
+			A               | L0001: We leverage synergy across services to streamline data pipelines.
+
+			## Document Scores
+
+			document_density  2.0/2   (confidence low )  "Excellent — dense, crisp, and high-signal throughout""
+		`);
+	});
+
+	it("executes standard input workflow on clean/empty input without violations", async () => {
+		let capturedOutput = "";
+		vi.spyOn(console, "log").mockImplementation((msg: string) => {
+			capturedOutput += (capturedOutput ? "\n" : "") + msg;
+		});
+
+		await main(
+			[
+				"-r",
+				"rules/no-ai-slop.md",
+				"--provider",
+				"openrouter",
+				"--no-cache",
+				"--json",
+				"-",
+			],
+			Readable.from([""]),
+		);
+
+		const parsed = JSON.parse(capturedOutput);
+		expect(parsed.file).toBe("<stdin>");
+		expect(parsed.violations.lines).toEqual([]);
+		expect(parsed.violations.document).toEqual({});
 	});
 });

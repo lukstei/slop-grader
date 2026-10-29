@@ -115,8 +115,8 @@
 - **Objective:** Display estimated or reported API costs (and token counts) in the `--stats` summary and JSON output.
 - **Agent Triage:** Capture usage metadata (tokens or billed cost) from provider responses when available, falling back to local token estimation via `tokenx` with model pricing tables. Format costs cleanly (e.g. `API cost: $0.0042`) in `formatStats` and include raw numeric fields in `--json`.
 
-### [ ] 24. Support Stdin Mode with `-`
-- **Current State:** The CLI expects a filesystem path as the positional file argument (`src/main.ts`), reading it with `readFile(file, "utf8")` and resolving it with `resolve(file)`. Passing `-` attempts to open a file named `"-"` from disk, and piping into `slop-grader` without a file argument fails with the usage error.
+### [x] 24. Support Stdin Mode with `-`
+- **Current State:** Implemented by reading `process.stdin` via Node's `text(stdin)` when `file === "-"`. Labels target as `"<stdin>"` in terminal and JSON outputs, preserves line cache compatibility, and supports empty input gracefully.
 - **Objective:** Allow passing `-` as the target file argument to read document content from standard input, enabling Unix pipelines (e.g. `cat file.md | slop-grader -r slop -`).
 - **Agent Triage:** Read `process.stdin` when `file === "-"`, handling EOF and empty input cleanly. Use `"<stdin>"` or `"-"` as the display and JSON `file` label instead of passing `"-"` to `path.resolve`.
 

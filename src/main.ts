@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { realpathSync } from "node:fs";
 import { readdir, readFile } from "node:fs/promises";
 import { resolve } from "node:path";
+import { text } from "node:stream/consumers";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
 import { LineCacheManager } from "./cache.ts";
@@ -126,7 +127,7 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 
 	if (!rulesPaths.length || (!check && !file)) {
 		throw new Error(
-			"usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--base-url <url>] [--concurrency <num>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]",
+			"usage: node main.ts [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--base-url <url>] [--concurrency <num>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file|-]",
 		);
 	}
 
@@ -174,9 +175,12 @@ export function parseCliArgs(argv = process.argv.slice(2)): {
 }
 
 const USAGE =
-	"usage: slop-grader [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--base-url <url>] [--concurrency <num>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file]";
+	"usage: slop-grader [-c|--check] [-l|--list-rulesets] -r <name|path> [-r ...] [--provider <jev|openrouter>] [--model <model>] [--base-url <url>] [--concurrency <num>] [--json] [--stats] [--debug] [--no-cache] [--cache-dir <dir>] [-h|--help] [-v|--version] [file|-]";
 
-export async function main(argv = process.argv.slice(2)) {
+export async function main(
+	argv = process.argv.slice(2),
+	stdin: NodeJS.ReadableStream = process.stdin,
+) {
 	const {
 		check,
 		rulesPaths,
@@ -301,11 +305,12 @@ export async function main(argv = process.argv.slice(2)) {
 	};
 
 	const skillPath = fileURLToPath(new URL("../SKILL.md", import.meta.url));
-	const filePath = resolve(file);
+	const isStdin = file === "-";
+	const filePath = isStdin ? "<stdin>" : resolve(file);
 
 	const [{ lineRules, docRules }, fullText] = await Promise.all([
 		loadRules(rulesPaths),
-		readFile(file, "utf8"),
+		isStdin ? text(stdin) : readFile(file, "utf8"),
 	]);
 	const lines = parseLines(fullText);
 
